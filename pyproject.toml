@@ -7,9 +7,9 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-fx-strategy = {path = "../fx-strategy", develop = true}
 pandas-stubs = "^2.2.2.240603"
 backtesting = "^0.3.3"
+fx-strategy = {path = "../fx-strategy", develop = true}
 
 
 [tool.poetry.group.dev.dependencies]

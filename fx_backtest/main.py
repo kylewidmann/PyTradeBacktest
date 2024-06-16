@@ -7,8 +7,10 @@ def calculate_stop_loss(cash, pair, price, risk=0.01):
     pass
 
 
-with open("/home/kyle/Downloads/GBPUSD_M5.csv") as fh:
-    data = pd.read_csv(fh, delimiter="\t", parse_dates=["Time"])
+with open("/home/kyle/Tick_Data/ohlc/2024/January/GBPUSD-2024-01_5Min.csv") as fh:
+    data = pd.read_csv(fh, parse_dates=["Timestamp"])
+    data.rename(columns={"open": "Open", "high": "High", "low": "Low", "close": "Close"}, inplace=True)
+    data = data.dropna()
 
 bt = Backtest(
     data, SlopeMomentum, commission=0.000, exclusive_orders=False, margin=0.02

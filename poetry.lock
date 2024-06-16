@@ -298,6 +298,26 @@ pycodestyle = ">=2.11.0,<2.12.0"
 pyflakes = ">=3.2.0,<3.3.0"
 
 [[package]]
+name = "fx-lib"
+version = "0.1.0"
+description = ""
+optional = false
+python-versions = "^3.10"
+files = []
+develop = true
+
+[package.dependencies]
+backtesting = "^0.3.3"
+numpy = "^1.26.4"
+pandas = "^2.2.2"
+pandas-stubs = "^2.2.2.240603"
+pytest = "^8.1.1"
+
+[package.source]
+type = "directory"
+url = "../fx-lib"
+
+[[package]]
 name = "fx-strategy"
 version = "0.1.0"
 description = ""
@@ -305,6 +325,11 @@ optional = false
 python-versions = "^3.10"
 files = []
 develop = true
+
+[package.dependencies]
+fx-lib = {path = "../fx-lib", develop = true}
+pandas = "^2.2.2"
+pandas-stubs = "^2.2.2.240603"
 
 [package.source]
 type = "directory"
