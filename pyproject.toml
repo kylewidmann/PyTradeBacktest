@@ -8,8 +8,9 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 pandas-stubs = "^2.2.2.240603"
-backtesting = "^0.3.3"
 fx-strategy = {path = "../fx-strategy", develop = true}
+tqdm = "^4.66.4"
+bokeh = "^3.4.2"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -52,3 +53,8 @@ omit = [
 [[tool.mypy.overrides]]
 module = "backtesting.*"
 ignore_missing_imports = true
+
+[tool.bandit]
+skips = [
+    'B101',
+]

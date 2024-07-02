@@ -2,7 +2,7 @@
 bandit-local: ##@lint Run bandit
 bandit-local: files ?= ${SERVICE}
 bandit-local:
-	${POETRY} run bandit -r ${files}
+	${POETRY} run bandit -r ${files} -c pyproject.toml
 
 .PHONY: black-local
 black-local: ##@lint Run black
