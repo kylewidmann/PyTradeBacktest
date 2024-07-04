@@ -14,61 +14,6 @@ __pdoc__ = {
     "Trade.__init__": False,
 }
 
-class Position:
-    """
-    Currently held asset position, available as
-    `backtesting.backtesting.Strategy.position` within
-    `backtesting.backtesting.Strategy.next`.
-    Can be used in boolean contexts, e.g.
-
-        if self.position:
-            ...  # we have a position, either long or short
-    """
-
-    def __init__(self, broker: IBroker):
-        self.__broker = broker
-
-    def __bool__(self):
-        return self.size != 0
-
-    @property
-    def size(self) -> float:
-        """Position size in units of asset. Negative if position is short."""
-        return sum(trade.size for trade in self.__broker.trades)
-
-    @property
-    def pl(self) -> float:
-        """Profit (positive) or loss (negative) of the current position in cash units."""
-        return sum(trade.pl for trade in self.__broker.trades)
-
-    @property
-    def pl_pct(self) -> float:
-        """Profit (positive) or loss (negative) of the current position in percent."""
-        weights = np.abs([trade.size for trade in self.__broker.trades])
-        weights = weights / weights.sum()
-        pl_pcts = np.array([trade.pl_pct for trade in self.__broker.trades])
-        return (pl_pcts * weights).sum()
-
-    @property
-    def is_long(self) -> bool:
-        """True if the position is long (position size is positive)."""
-        return self.size > 0
-
-    @property
-    def is_short(self) -> bool:
-        """True if the position is short (position size is negative)."""
-        return self.size < 0
-
-    def close(self, portion: float = 1.0):
-        """
-        Close portion of position by closing `portion` of each active trade. See `Trade.close`.
-        """
-        for trade in self.__broker.trades:
-            trade.close(portion)
-
-    def __repr__(self):
-        return f"<Position: {self.size} ({len(self.__broker.trades)} trades)>"
-
 
 class Order:
     """
@@ -88,7 +33,6 @@ class Order:
 
     def __init__(
         self,
-        broker: IBroker,
         size: float,
         limit_price: Optional[float] = None,
         stop_price: Optional[float] = None,
@@ -97,7 +41,6 @@ class Order:
         parent_trade: Optional["Trade"] = None,
         tag: object = None,
     ):
-        self.__broker = broker
         assert size != 0
         self.__size = size
         self.__limit_price = limit_price
@@ -129,18 +72,6 @@ class Order:
             )
         )
 
-    def cancel(self):
-        """Cancel the order."""
-        self.__broker.orders.remove(self)
-        trade = self.__parent_trade
-        if trade:
-            if self is trade._sl_order:
-                trade._replace(sl_order=None)
-            elif self is trade._tp_order:
-                trade._replace(tp_order=None)
-            else:
-                # XXX: https://github.com/kernc/backtesting.py/issues/251#issuecomment-835634984 ???
-                assert False
 
     # Fields getters
 
@@ -233,6 +164,16 @@ class Order:
         [OCO]: https://www.investopedia.com/terms/o/oco.asp
         """
         return bool(self.__parent_trade)
+    
+    def cancel(self):
+        trade = self.__parent_trade
+        if trade:
+            if self is trade._sl_order:
+                trade._replace(sl_order=None)
+            elif self is trade._tp_order:
+                trade._replace(tp_order=None)
+            else:
+                raise RuntimeError()
 
 
 class Trade:
@@ -273,8 +214,7 @@ class Trade:
         """Place new `Order` to close `portion` of the trade at next market price."""
         assert 0 < portion <= 1, "portion must be a fraction between 0 and 1"
         size = copysign(max(1, round(abs(self.__size) * portion)), -self.__size)
-        order = Order(self.__broker, size, parent_trade=self, tag=self.__tag)
-        self.__broker.orders.insert(0, order)
+        return Order(size, parent_trade=self, tag=self.__tag)
 
     # Fields getters
 
@@ -332,14 +272,14 @@ class Trade:
     @property
     def entry_time(self) -> Union[pd.Timestamp, int]:
         """Datetime of when the trade was entered."""
-        return self.__broker._data.index[self.__entry_bar]
+        return self.__broker.data.index[self.__entry_bar]
 
     @property
     def exit_time(self) -> Optional[Union[pd.Timestamp, int]]:
         """Datetime of when the trade was exited."""
         if self.__exit_bar is None:
             return None
-        return self.__broker._data.index[self.__exit_bar]
+        return self.__broker.data.index[self.__exit_bar]
 
     @property
     def is_long(self):
@@ -445,3 +385,58 @@ class _Orders(tuple):
                 "Use `Order` API instead. See docs."
             )
         raise AttributeError(f"'tuple' object has no attribute {item!r}")
+    
+class Position:
+    """
+    Currently held asset position, available as
+    `backtesting.backtesting.Strategy.position` within
+    `backtesting.backtesting.Strategy.next`.
+    Can be used in boolean contexts, e.g.
+
+        if self.position:
+            ...  # we have a position, either long or short
+    """
+
+    def __init__(self, trades: list[Trade]):
+        self._trades = trades
+
+    def __bool__(self):
+        return self.size != 0
+
+    @property
+    def size(self) -> float:
+        """Position size in units of asset. Negative if position is short."""
+        return sum(trade.size for trade in self._trades)
+
+    @property
+    def pl(self) -> float:
+        """Profit (positive) or loss (negative) of the current position in cash units."""
+        return sum(trade.pl for trade in self._trades)
+
+    @property
+    def pl_pct(self) -> float:
+        """Profit (positive) or loss (negative) of the current position in percent."""
+        weights = np.abs([trade.size for trade in self._trades])
+        weights = weights / weights.sum()
+        pl_pcts = np.array([trade.pl_pct for trade in self._trades])
+        return (pl_pcts * weights).sum()
+
+    @property
+    def is_long(self) -> bool:
+        """True if the position is long (position size is positive)."""
+        return self.size > 0
+
+    @property
+    def is_short(self) -> bool:
+        """True if the position is short (position size is negative)."""
+        return self.size < 0
+
+    def close(self, portion: float = 1.0):
+        """
+        Close portion of position by closing `portion` of each active trade. See `Trade.close`.
+        """
+        for trade in self._trades:
+            trade.close(portion)
+
+    def __repr__(self):
+        return f"<Position: {self.size} ({len(self._trades)} trades)>"

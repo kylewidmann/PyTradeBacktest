@@ -29,6 +29,7 @@ from fx_backtest._plotting import plot  # noqa: I001
 from fx_backtest._stats import compute_stats
 from fx_backtest._util import _as_str, _Data, _Indicator, try_
 from fx_backtest._models import Position, Order, Trade, _Orders
+from fx_backtest._interfaces import IBroker
 from fx_backtest._exceptions import _OutOfMoneyError
 
 __pdoc__ = {
@@ -333,7 +334,7 @@ class BacktestStrategy(Strategy):
             setattr(self, attr, indicator[..., : len(self.data)])
         super().next()
 
-class _Broker:
+class _Broker(IBroker):
     def __init__(
         self,
         *,
@@ -361,21 +362,25 @@ class _Broker:
         self._exclusive_orders = exclusive_orders
 
         self._equity = np.tile(np.nan, len(index))
-        self._orders: List[Order] = []
-        self._trades: List[Trade] = []
-        self.position = Position(self)
-        self.closed_trades: List[Trade] = []
+        self._orders: list[Order] = []
+        self._trades: list[Trade] = []
+        self.position = Position(self.trades)
+        self.closed_trades: list[Trade] = []
 
     def __repr__(self):
         return f"<Broker: {self._cash:.0f}{self.position.pl:+.1f} ({len(self.trades)} trades)>"
 
     @property
-    def trades(self) -> List[Trade]:
+    def trades(self) -> list[Trade]:
         return self._trades
 
     @property
-    def orders(self) -> List[Order]:
+    def orders(self) -> list[Order]:
         return self._orders
+
+    @property
+    def data(self) -> _Data:
+        return self._data
 
     def new_order(
         self,
@@ -425,12 +430,14 @@ class _Broker:
                 for o in self.orders:
                     if not o.is_contingent:
                         o.cancel()
+                        self.orders.remove(o)
                 for t in self.trades:
                     t.close()
 
             self.orders.append(order)
 
         return order
+
 
     @property
     def last_price(self) -> float:
@@ -929,7 +936,7 @@ class Backtest:
             else:
                 # Close any remaining open trades so they produce some stats
                 for trade in broker.trades:
-                    trade.close()
+                    broker.orders.insert(0, trade.close())
 
                 # Re-run broker one last time to handle orders placed in the last strategy
                 # iteration. Use the same OHLC values as in the last broker iteration.
