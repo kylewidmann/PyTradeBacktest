@@ -21,16 +21,21 @@ from typing import Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 import numpy as np
 import pandas as pd
 from numpy.random import default_rng
-from tqdm.auto import tqdm as _tqdm
-_tqdm = partial(_tqdm, leave=False)
+from skopt import forest_minimize
+from skopt.callbacks import DeltaXStopper
+from skopt.learning import ExtraTreesRegressor
+from skopt.space import Categorical, Integer, Real
+from skopt.utils import use_named_args
+from tqdm.auto import tqdm
 
-
+from fx_backtest._exceptions import _OutOfMoneyError
+from fx_backtest._interfaces import IBroker
+from fx_backtest._models import Order, Position, Trade, _Orders
 from fx_backtest._plotting import plot  # noqa: I001
 from fx_backtest._stats import compute_stats
 from fx_backtest._util import _as_str, _Data, _Indicator, try_
-from fx_backtest._models import Position, Order, Trade, _Orders
-from fx_backtest._interfaces import IBroker
-from fx_backtest._exceptions import _OutOfMoneyError
+
+_tqdm = partial(tqdm, leave=False)
 
 __pdoc__ = {
     "Strategy.__init__": False,
@@ -38,7 +43,8 @@ __pdoc__ = {
     "Position.__init__": False,
     "Trade.__init__": False,
 }
-        
+
+
 class Strategy(metaclass=ABCMeta):
     """
     A trading strategy base class. Extend this class and
@@ -318,6 +324,7 @@ class Strategy(metaclass=ABCMeta):
         """List of settled trades (see `Trade`)."""
         return tuple(self._broker.closed_trades)
 
+
 class BacktestStrategy(Strategy):
 
     def init(self):
@@ -333,6 +340,7 @@ class BacktestStrategy(Strategy):
             # Slice indicator on the last dimension (case of 2d indicator)
             setattr(self, attr, indicator[..., : len(self.data)])
         super().next()
+
 
 class _Broker(IBroker):
     def __init__(
@@ -418,7 +426,7 @@ class _Broker(IBroker):
                     f"TP ({tp}) < LIMIT ({limit or stop or adjusted_price}) < SL ({sl})"
                 )
 
-        order = Order(self, size, limit, stop, sl, tp, trade, tag)
+        order = Order(size, limit, stop, sl, tp, trade, tag)
         # Put the new order in the order queue,
         # inserting SL/TP/trade-closing orders in-front
         if trade:
@@ -437,7 +445,6 @@ class _Broker(IBroker):
             self.orders.append(order)
 
         return order
-
 
     @property
     def last_price(self) -> float:
@@ -800,7 +807,7 @@ class Backtest:
         if len(data) == 0:
             raise ValueError("OHLC `data` is empty")
         if (
-            len(data.columns.intersection({"Open", "High", "Low", "Close", "Volume"}))
+            len(data.columns.intersection(["Open", "High", "Low", "Close", "Volume"]))
             != 5
         ):
             raise ValueError(
@@ -901,18 +908,18 @@ class Backtest:
         data._update()  # Strategy.init might have changed/added to data.df
 
         # Indicators used in Strategy.next()
-        # indicator_attrs = {
-        #     attr: indicator
-        #     for attr, indicator in strategy.__dict__.items()
-        #     if isinstance(indicator, _Indicator)
-        # }.items()
+        indicator_attrs = {
+            attr: indicator
+            for attr, indicator in strategy.__dict__.items()
+            if isinstance(indicator, _Indicator)
+        }.items()
 
         # Skip first few candles where indicators are still "warming up"
         # +1 to have at least two entries available
         start = 1 + max(
             (
                 np.isnan(indicator.astype(float)).argmin(axis=-1).max()
-                for _, indicator in strategy._indicator_attrs
+                for _, indicator in indicator_attrs
             ),
             default=0,
         )
@@ -1190,7 +1197,7 @@ class Backtest:
                 # run so we get some, if empty, results
                 stats = self.run(**param_combos[0])
             else:
-                stats = self.run(**dict(zip(heatmap.index.names, best_params)))
+                stats = self.run(**dict(zip(heatmap.index.names, str(best_params))))
 
             if return_heatmap:
                 return stats, heatmap
@@ -1201,18 +1208,6 @@ class Backtest:
             Tuple[pd.Series, pd.Series],
             Tuple[pd.Series, pd.Series, dict],
         ]:
-            try:
-                from skopt import forest_minimize
-                from skopt.callbacks import DeltaXStopper
-                from skopt.learning import ExtraTreesRegressor
-                from skopt.space import Categorical, Integer, Real
-                from skopt.utils import use_named_args
-            except ImportError:
-                raise ImportError(
-                    "Need package 'scikit-optimize' for method='skopt'. "
-                    "pip install scikit-optimize"
-                ) from None
-
             nonlocal max_tries
             max_tries = (
                 200
@@ -1308,12 +1303,12 @@ class Backtest:
                 res.func_vals = res.func_vals[valid]
                 output.append(res)
 
-            return stats if len(output) == 1 else tuple(output)
+            return stats if len(output) == 1 else tuple(output)  # type:ignore
 
         if method == "grid":
             output = _optimize_grid()
         elif method == "skopt":
-            output = _optimize_skopt()
+            output = _optimize_skopt()  # type:ignore
         else:
             raise ValueError(f"Method should be 'grid' or 'skopt', not {method!r}")
         return output
@@ -1331,7 +1326,7 @@ class Backtest:
     def plot(
         self,
         *,
-        results: pd.Series = None,
+        results: Optional[pd.Series] = None,
         filename=None,
         plot_width=None,
         plot_equity=True,

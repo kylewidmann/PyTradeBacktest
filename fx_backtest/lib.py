@@ -105,12 +105,12 @@ def crossover(series1: Sequence, series2: Sequence) -> bool:
         True
     """
     series1 = (
-        series1.values
+        series1.values  # type:ignore
         if isinstance(series1, pd.Series)
         else (series1, series1) if isinstance(series1, Number) else series1
     )
     series2 = (
-        series2.values
+        series2.values  # type:ignore
         if isinstance(series2, pd.Series)
         else (series2, series2) if isinstance(series2, Number) else series2
     )
@@ -179,7 +179,7 @@ def compute_stats(
     *,
     stats: pd.Series,
     data: pd.DataFrame,
-    trades: pd.DataFrame = None,
+    trades: Optional[pd.DataFrame] = None,
     risk_free_rate: float = 0.0,
 ) -> pd.Series:
     """
@@ -204,7 +204,7 @@ def compute_stats(
         equity = equity.copy()
         equity[:] = stats._equity_curve.Equity.iloc[0]
         for t in trades.itertuples(index=False):
-            equity.iloc[t.EntryBar :] += t.PnL
+            equity.iloc[t.EntryBar :] += t.PnL  # type:ignore
     return _compute_stats(
         trades=trades,
         equity=equity,
@@ -219,7 +219,7 @@ def resample_apply(
     func: Optional[Callable[..., Sequence]],
     series: Union[pd.Series, pd.DataFrame, _Array],
     *args,
-    agg: Optional[Union[str, dict]] = None,
+    group_by: Optional[Union[str, dict]] = None,
     **kwargs,
 ):
     """
@@ -305,12 +305,16 @@ http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
         )
         series = series.s
 
-    if agg is None:
-        agg = OHLCV_AGG.get(getattr(series, "name", ""), "last")
+    if group_by is None:
+        group_by = OHLCV_AGG.get(getattr(series, "name", ""), "last")
         if isinstance(series, pd.DataFrame):
-            agg = {column: OHLCV_AGG.get(column, "last") for column in series.columns}
+            group_by = {
+                column: OHLCV_AGG.get(column, "last") for column in series.columns
+            }
 
-    resampled = series.resample(rule, label="right").agg(agg).dropna()
+    resampled = (
+        series.resample(rule, label="right").agg(group_by).dropna()  # type:ignore
+    )  # type:ignore
     resampled.name = _as_str(series) + "[" + rule + "]"
 
     # Check first few stack frames if we are being called from
@@ -374,7 +378,7 @@ def random_ohlc_data(
     def shuffle(x):
         return x.sample(frac=frac, replace=frac > 1, random_state=random_state)
 
-    if len(example_data.columns.intersection({"Open", "High", "Low", "Close"})) != 4:
+    if len(example_data.columns.intersection(["Open", "High", "Low", "Close"])) != 4:
         raise ValueError(
             "`data` must be a pandas.DataFrame with columns "
             "'Open', 'High', 'Low', 'Close'"
@@ -504,9 +508,11 @@ class TrailingStrategy(Strategy):
         hi, lo, c_prev = (
             self.data.High,
             self.data.Low,
-            pd.Series(self.data.Close).shift(1),
+            pd.Series(self.data.Close).shift(1),  # type:ignore
         )
-        tr = np.max([hi - lo, (c_prev - hi).abs(), (c_prev - lo).abs()], axis=0)
+        tr = np.max(
+            [hi - lo, (c_prev - hi).abs(), (c_prev - lo).abs()], axis=0  # type:ignore
+        )
         atr = pd.Series(tr).rolling(periods).mean().bfill().values
         self.__atr = atr
 

@@ -5,12 +5,13 @@ import pandas as pd
 
 def _read_file(filename):
     from os.path import dirname, join
+    
+    # df.index = pd.to_datetime(df.index, format="%Y%m%d %H:%M:%S.%f")
 
     return pd.read_csv(
         join(dirname(__file__), filename),
         index_col=0,
-        parse_dates=True,
-        infer_datetime_format=True,
+        parse_dates=True
     )
 
 

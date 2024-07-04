@@ -276,7 +276,9 @@ def plot(
     figs_above_ohlc, figs_below_ohlc = [], []
 
     source = ColumnDataSource(df)
-    source.add((df.Close >= df.Open).values.astype(np.uint8).astype(str), "inc")
+    source.add(
+        (df.Close >= df.Open).values.astype(np.uint8).astype(str).tolist(), "inc"
+    )
 
     trade_source = ColumnDataSource(
         dict(
@@ -831,16 +833,15 @@ return this.labels[index] || "";
 
     set_tooltips(fig_ohlc, ohlc_tooltips, vline=True, renderers=[ohlc_bars])
 
-    source.add(ohlc_extreme_values.min(1), "ohlc_low")
-    source.add(ohlc_extreme_values.max(1), "ohlc_high")
+    source.add(ohlc_extreme_values.min(1).to_list(), "ohlc_low")
+    source.add(ohlc_extreme_values.max(1).to_list(), "ohlc_high")
 
     custom_js_args = dict(ohlc_range=fig_ohlc.y_range, source=source)
     if plot_volume:
         custom_js_args.update(volume_range=fig_volume.y_range)
 
-    fig_ohlc.x_range.js_on_change(
-        "end",
-        CustomJS(args=custom_js_args, code=_AUTOSCALE_JS_CALLBACK),  # type: ignore
+    fig_ohlc.x_range.js_on_change(  # type: ignore
+        "end", CustomJS(args=custom_js_args, code=_AUTOSCALE_JS_CALLBACK)
     )
 
     plots = figs_above_ohlc + [fig_ohlc] + figs_below_ohlc
@@ -915,8 +916,8 @@ def plot_heatmaps(
     )
     for df in dfs:
         name1, name2 = df.index.names
-        level1 = df.index.levels[0].astype(str).tolist()
-        level2 = df.index.levels[1].astype(str).tolist()
+        level1 = df.index.levels[0].astype(str).tolist()  # type: ignore
+        level2 = df.index.levels[1].astype(str).tolist()  # type: ignore
         df = df.reset_index()
         df[name1] = df[name1].astype("str")
         df[name2] = df[name2].astype("str")

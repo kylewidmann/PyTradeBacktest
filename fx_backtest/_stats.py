@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, List, Union
 
 import numpy as np
 import pandas as pd
+from pandas import Series
 
 from ._util import _data_period
 
@@ -93,7 +94,7 @@ def compute_stats(
 
     have_position = np.repeat(0, len(index))
     for t in trades_df.itertuples(index=False):
-        have_position[t.EntryBar : t.ExitBar + 1] = 1
+        have_position[t.EntryBar : t.ExitBar + 1] = 1  # type:ignore
 
     s.loc["Exposure Time [%]"] = (
         have_position.mean() * 100
@@ -105,7 +106,7 @@ def compute_stats(
     s.loc["Buy & Hold Return [%]"] = (c[-1] - c[0]) / c[0] * 100  # long-only return
 
     gmean_day_return: float = 0
-    day_returns = np.array(np.nan)
+    day_returns = Series(np.array(np.nan))
     annual_trading_days = np.nan
     if isinstance(index, pd.DatetimeIndex):
         day_returns = equity_df["Equity"].resample("D").last().dropna().pct_change()
@@ -126,7 +127,7 @@ def compute_stats(
         np.sqrt(
             (
                 day_returns.var(ddof=int(bool(day_returns.shape)))
-                + (1 + gmean_day_return) ** 2
+                + (1 + gmean_day_return) ** 2  # type:ignore
             )
             ** annual_trading_days
             - (1 + gmean_day_return) ** (2 * annual_trading_days)

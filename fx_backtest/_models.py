@@ -1,7 +1,7 @@
-
 from copy import copy
 from math import copysign
 from typing import Optional, Union
+
 import numpy as np
 import pandas as pd
 
@@ -71,7 +71,6 @@ class Order:
                 if value is not None
             )
         )
-
 
     # Fields getters
 
@@ -164,7 +163,7 @@ class Order:
         [OCO]: https://www.investopedia.com/terms/o/oco.asp
         """
         return bool(self.__parent_trade)
-    
+
     def cancel(self):
         trade = self.__parent_trade
         if trade:
@@ -182,9 +181,7 @@ class Trade:
     Find active trades in `Strategy.trades` and closed, settled trades in `Strategy.closed_trades`.
     """
 
-    def __init__(
-        self, broker: IBroker, size: int, entry_price: float, entry_bar, tag
-    ):
+    def __init__(self, broker: IBroker, size: int, entry_price: float, entry_bar, tag):
         self.__broker = broker
         self.__size = size
         self.__entry_price = entry_price
@@ -355,6 +352,7 @@ class Trade:
             )
             setattr(self, attr, order)
 
+
 class _Orders(tuple):
     """
     TODO: remove this class. Only for deprecation.
@@ -385,7 +383,8 @@ class _Orders(tuple):
                 "Use `Order` API instead. See docs."
             )
         raise AttributeError(f"'tuple' object has no attribute {item!r}")
-    
+
+
 class Position:
     """
     Currently held asset position, available as

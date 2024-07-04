@@ -21,6 +21,7 @@ flake8 = "^7.0.0"
 black = "^24.3.0"
 isort = "^5.13.2"
 mypy = "^1.9.0"
+types-tqdm = "^4.66.0.20240417"
 
 [build-system]
 requires = ["poetry-core"]
@@ -51,7 +52,10 @@ omit = [
 ]
 
 [[tool.mypy.overrides]]
-module = "backtesting.*"
+module = [
+    "backtesting.*",
+    "skopt.*"
+]
 ignore_missing_imports = true
 
 [tool.bandit]

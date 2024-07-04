@@ -14,6 +14,8 @@ from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
+from pandas.testing import assert_frame_equal
+
 from fx_backtest import Backtest, Strategy
 from fx_backtest._stats import compute_drawdown_duration_peaks
 from fx_backtest._util import _Array, _as_str, _Indicator, try_
@@ -30,8 +32,8 @@ from fx_backtest.lib import (
     random_ohlc_data,
     resample_apply,
 )
+
 from . import EURUSD, GOOG, SMA
-from pandas.testing import assert_frame_equal
 
 SHORT_DATA = GOOG.iloc[:20]  # Short data for fast tests with no indicator lag
 
@@ -339,7 +341,7 @@ class TestBacktest(TestCase):
                     "Duration",
                     "StopLoss",
                     "Tag",
-                    "TakeProfit"
+                    "TakeProfit",
                 ]
             ),
         )
