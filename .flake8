@@ -4,5 +4,6 @@ exclude =
     .git,
     .eggs,
     __pycache__,
-    doc/examples
+    doc/examples,
+    **/__init__.py
 extend-ignore = E203, E701
