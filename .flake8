@@ -1,9 +1,2 @@
 [flake8]
 max-line-length = 120
-exclude =
-    .git,
-    .eggs,
-    __pycache__,
-    doc/examples,
-    **/__init__.py
-extend-ignore = E203, E701

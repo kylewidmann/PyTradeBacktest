@@ -4,13 +4,16 @@ version = "0.1.0"
 description = ""
 authors = ["Kyle Widmann <Kyle.Widmann@gmail.com>"]
 readme = "README.md"
+packages = [
+    {include = "fx_backtest"}
+]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-pandas-stubs = "^2.2.2.240603"
+fx-lib = {path = "../fx-lib", develop = true}
 fx-strategy = {path = "../fx-strategy", develop = true}
-tqdm = "^4.66.4"
-bokeh = "^3.4.2"
+pandas = "^2.2.2"
+pytest-asyncio = "^0.24.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -21,7 +24,6 @@ flake8 = "^7.0.0"
 black = "^24.3.0"
 isort = "^5.13.2"
 mypy = "^1.9.0"
-types-tqdm = "^4.66.0.20240417"
 
 [build-system]
 requires = ["poetry-core"]
@@ -49,16 +51,4 @@ exclude_also = [
     "@(abc\\.)?abstractmethod",
 ]
 omit = [
-]
-
-[[tool.mypy.overrides]]
-module = [
-    "backtesting.*",
-    "skopt.*"
-]
-ignore_missing_imports = true
-
-[tool.bandit]
-skips = [
-    'B101',
 ]

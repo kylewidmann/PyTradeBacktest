@@ -44,4 +44,4 @@ services:
     extends:
       file: docker-compose.base.yaml
       service: base
-    entrypoint: ["/app/fx-backtest/scripts/test.sh"]
+    entrypoint: ["/app/scripts/test.sh"]

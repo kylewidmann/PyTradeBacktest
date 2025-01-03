@@ -25,9 +25,7 @@ RUN curl -sSL https://install.python-poetry.org | python3 - \
 
 WORKDIR /app/${PROJECT_DIR}
 COPY ${PROJECT_DIR}/pyproject.toml ${PROJECT_DIR}/poetry.lock ./
-COPY fx-strategy ../fx-strategy
-COPY vendors/backtesting.py ../vendors/backtesting.py
-# RUN poetry install --only main
+RUN poetry install --only main
 
 ##################################################
 ## PRODUCTION ##
@@ -44,7 +42,7 @@ RUN apt-get update \
     curl \
     build-essential
 
-ENV PATH="/app/${PROJECT_DIR}/.venv/bin:$PATH"
+ENV PATH="/app/.venv/bin:$PATH"
 ENV APP_USER app
 ENV APP_GROUP app
 RUN groupadd  ${APP_GROUP}
@@ -53,11 +51,9 @@ RUN useradd -g ${APP_GROUP} ${APP_USER}
 WORKDIR /app
 COPY --chown=${APP_USER}:${APP_GROUP} ${PROJECT_DIR}/ ./
 COPY --from=base /app .
-
-WORKDIR /app/${PROJECT_DIR}
 USER ${APP_USER}
 
-ENTRYPOINT ["/app/${PROJECT_DIR}/scripts/entrypoint.sh"]
+ENTRYPOINT ["/app/scripts/entrypoint.sh"]
 
 ##################################################
 ## DEVELOPMENT ##
@@ -65,7 +61,7 @@ ENTRYPOINT ["/app/${PROJECT_DIR}/scripts/entrypoint.sh"]
 
 FROM base as development
 
-ENV PATH="/app/${PROJECT_DIR}/.venv/bin:$PATH"
+ENV PATH="/app/.venv/bin:$PATH"
 ENV APP_USER app
 ENV APP_GROUP app
 RUN groupadd  ${APP_GROUP}
@@ -77,10 +73,7 @@ RUN set -ex \
 
 WORKDIR /app
 COPY --chown=${APP_USER}:${APP_GROUP} . ./
-
-WORKDIR /app/${PROJECT_DIR}
 RUN poetry install
-RUN chown ${APP_USER}:${APP_GROUP} .
 USER ${APP_USER}
 
-ENTRYPOINT ["/app/${PROJECT_DIR}/scripts/entrypoint.sh"]
+ENTRYPOINT ["/app/scripts/entrypoint.sh"]
