@@ -1,22 +1,22 @@
-import pytest
-from fx_backtest.data import CsvDataSource, CsvMarketDataLoader, MarketData
-from fx_lib.models.indicator import Indicator
-from fx_lib.models.instruments import IInstrumentData
-from fx_lib.events.event import Event
-from fx_lib.models.instruments import Instrument, Granularity
-import pandas as pd
 import numpy as np
+import pandas as pd
+import pytest
+from pytrade.events.event import Event
+from pytrade.models.indicator import Indicator
+from pytrade.models.instruments import Granularity, IInstrumentData, Instrument
+
+from pytradebacktest.data import CsvDataSource, CsvMarketDataLoader, MarketData
+
 
 class TestIndicator(Indicator):
 
     def _run(self, *args, **kwargs):
-        return self._data.values.flatten()
+        return self._data.df.values.flatten()
+
 
 class TestData(IInstrumentData):
 
-    def __init__(
-        self, data: pd.DataFrame
-    ):
+    def __init__(self, data: pd.DataFrame):
         self._data = data
         self.__update_event = Event()
 
@@ -32,64 +32,69 @@ class TestData(IInstrumentData):
     def on_update(self, value: Event):
         self.__update_event = value
 
+
 @pytest.fixture(scope="module")
 def data():
     return np.array([1, 2, 3, 4, 5])
+
 
 @pytest.fixture(scope="module")
 def instrument_data(data):
     df = pd.DataFrame(data)
     return TestData(df)
 
+
 @pytest.fixture(scope="module")
 def indicator(instrument_data):
     return TestIndicator(instrument_data)
 
+
 @pytest.fixture(scope="module")
 def test_csv_sources() -> list[CsvDataSource]:
     return [
-        # CsvDataSource(
-        #     "tests/unit/assets/EURGBP-2024-05_1Min.csv",
-        #     Instrument.EURGBP,
-        #     Granularity.M1
-        # ),
-        # CsvDataSource(
-        #     "tests/unit/assets/EURJPY-2024-05_1Min.csv",
-        #     Instrument.EURJPY,
-        #     Granularity.M1
-        # ),
+        CsvDataSource(
+            "tests/unit/assets/EURGBP-2024-05_1Min.csv",
+            Instrument.EURGBP,
+            Granularity.M1,
+        ),
+        CsvDataSource(
+            "tests/unit/assets/EURJPY-2024-05_1Min.csv",
+            Instrument.EURJPY,
+            Granularity.M1,
+        ),
         CsvDataSource(
             "tests/unit/assets/EURUSD-2024-05_1Min.csv",
             Instrument.EURUSD,
-            Granularity.M1
+            Granularity.M1,
         ),
-        # CsvDataSource(
-        #     "tests/unit/assets/GBPUSD-2024-05_1Min.csv",
-        #     Instrument.GBPUSD,
-        #     Granularity.M1
-        # ),
-        # CsvDataSource(
-        #     "tests/unit/assets/EURGBP-2024-05_5Min.csv",
-        #     Instrument.EURGBP,
-        #     Granularity.M5
-        # ),
-        # CsvDataSource(
-        #     "tests/unit/assets/EURJPY-2024-05_5Min.csv",
-        #     Instrument.EURJPY,
-        #     Granularity.M5
-        # ),
+        CsvDataSource(
+            "tests/unit/assets/GBPUSD-2024-05_1Min.csv",
+            Instrument.GBPUSD,
+            Granularity.M1,
+        ),
+        CsvDataSource(
+            "tests/unit/assets/EURGBP-2024-05_5Min.csv",
+            Instrument.EURGBP,
+            Granularity.M5,
+        ),
+        CsvDataSource(
+            "tests/unit/assets/EURJPY-2024-05_5Min.csv",
+            Instrument.EURJPY,
+            Granularity.M5,
+        ),
         CsvDataSource(
             "tests/unit/assets/EURUSD-2024-05_5Min.csv",
             Instrument.EURUSD,
-            Granularity.M5
+            Granularity.M5,
         ),
-        # CsvDataSource(
-        #     "tests/unit/assets/GBPUSD-2024-05_5Min.csv",
-        #     Instrument.GBPUSD,
-        #     Granularity.M5
-        # ),
+        CsvDataSource(
+            "tests/unit/assets/GBPUSD-2024-05_5Min.csv",
+            Instrument.GBPUSD,
+            Granularity.M5,
+        ),
     ]
 
-@pytest.fixture(scope="module")
+
+@pytest.fixture(scope="function")
 def test_universe(test_csv_sources):
     return MarketData(CsvMarketDataLoader(test_csv_sources))

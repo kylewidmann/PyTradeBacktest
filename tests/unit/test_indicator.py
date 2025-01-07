@@ -1,7 +1,8 @@
-from fx_lib.models.indicator import Indicator
 import numpy as np
+from pytrade.models.indicator import Indicator
 
-from fx_backtest.data import MarketData
+from pytradebacktest.data import MarketData
+
 
 def test_indicator_values(data: np.ndarray, indicator: Indicator):
     assert len(indicator._values) == len(data)
@@ -9,6 +10,6 @@ def test_indicator_values(data: np.ndarray, indicator: Indicator):
 
 
 def test_indicator_updates(test_universe: MarketData, indicator: Indicator):
-    data_c
+
     while test_universe.next():
         pass

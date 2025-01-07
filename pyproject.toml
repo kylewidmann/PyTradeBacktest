@@ -1,19 +1,15 @@
 [tool.poetry]
-name = "fx-backtest"
+name = "pytradebacktest"
 version = "0.1.0"
 description = ""
 authors = ["Kyle Widmann <Kyle.Widmann@gmail.com>"]
 readme = "README.md"
-packages = [
-    {include = "fx_backtest"}
-]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-fx-lib = {path = "../fx-lib", develop = true}
-fx-strategy = {path = "../fx-strategy", develop = true}
+pytrade = {path = "lib/PyTrade", develop = true}
 pandas = "^2.2.2"
-pytest-asyncio = "^0.24.0"
+pytest-asyncio = "^0.25.1"
 
 
 [tool.poetry.group.dev.dependencies]

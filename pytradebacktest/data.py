@@ -1,14 +1,18 @@
 from abc import abstractmethod
-from typing import Optional, Tuple
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
-from fx_lib.events.event import Event
-from pandas import Timestamp
-from pandas import Timedelta
-from fx_backtest.utils import load_csv
-from fx_lib.models.instruments import CandleData, Instrument, InstrumentCandles, INDEX, COLUMNS
-from fx_lib.models.instruments import Granularity
+from pandas import Timedelta, Timestamp
+from pytrade.models.instruments import (
+    CandleData,
+    Granularity,
+    Instrument,
+    InstrumentCandles,
+)
+
+from pytradebacktest.utils import load_csv
+
 
 class DataSource:
 
@@ -16,17 +20,20 @@ class DataSource:
         self.instrument = instrument
         self.granularity = granularity
 
+
 class CsvDataSource(DataSource):
 
     def __init__(self, path: str, instrument: Instrument, granularity: Granularity):
         super().__init__(instrument, granularity)
         self.path = path
 
+
 class MarketDataLoader:
 
     @abstractmethod
     def load(self) -> dict[Tuple[Instrument, Granularity], pd.DataFrame]:
         raise NotImplementedError
+
 
 class CsvMarketDataLoader(MarketDataLoader):
 
@@ -39,11 +46,12 @@ class CsvMarketDataLoader(MarketDataLoader):
         for source in self.sources:
             df = load_csv(source.path, parse_dates=["Timestamp"])
             df = df.set_index("Timestamp")
-            df.replace('', np.nan, inplace=True)
+            df.replace("", np.nan, inplace=True)
             df.dropna(inplace=True)
             _sources[(source.instrument, source.granularity)] = df
 
         return _sources
+
 
 class MarketData:
 
@@ -55,11 +63,11 @@ class MarketData:
     @property
     def universe(self):
         return self._sources
-    
+
     @property
     def index(self):
         return self._index
-    
+
     def _init_timeframe(self):
         _start = None
         _granularity = None
@@ -89,21 +97,24 @@ class MarketData:
 
         if not _start:
             raise RuntimeError("Unable to determine start time for market data.")
-        
+
         if not _granularity:
-            raise RuntimeError("Unable to determine smallest granularity for market data.")
-        
+            raise RuntimeError(
+                "Unable to determine smallest granularity for market data."
+            )
+
         if not _end:
             raise RuntimeError("Unable to determine end time for market data.")
-        
+
         self._index: Timestamp = _start - _granularity
-        self._granularity: Timedelta  = _granularity
+        self._granularity: Timedelta = _granularity
         self._end_index: Timestamp = _end
 
     def next(self):
-        
+
         self._index = self._index + self._granularity
         return self._index <= self._end_index
+
 
 class BacktestInstrumentCandles(InstrumentCandles):
 
@@ -117,7 +128,7 @@ class BacktestInstrumentCandles(InstrumentCandles):
     @property
     def index(self):
         return self._index
-    
+
     @index.setter
     def index(self, value: pd.Timestamp):
         if value in self._data.index:
@@ -126,7 +137,7 @@ class BacktestInstrumentCandles(InstrumentCandles):
     @property
     def i_index(self):
         return self._data.index.get_loc(self._index)
-    
+
     # def next(self):
     #     while self._i_index < len(self._data.index):
     #         yield self._data[self._i_index]
@@ -139,7 +150,7 @@ class BacktestCandleData(CandleData):
         self._max_size = -1
         self._data: dict[tuple[Instrument, Granularity], BacktestInstrumentCandles] = {}
         self._index = None
-    
+
     def __new__(cls, *args, **kwargs):
         if not hasattr(cls, "instance"):
             cls.instance = super().__new__(cls)
@@ -149,14 +160,16 @@ class BacktestCandleData(CandleData):
     @property
     def index(self):
         return self._index
-    
+
     @index.setter
     def index(self, value: pd.Timestamp):
         self._index = value
         for candles in self._data.values():
             candles.index = self._index
 
-    def populate(self, df: pd.DataFrame, instrument: Instrument, granularity: Granularity):
+    def populate(
+        self, df: pd.DataFrame, instrument: Instrument, granularity: Granularity
+    ):
         key = (instrument, granularity)
         instrument_candles: BacktestInstrumentCandles = self._data.get(
             key,

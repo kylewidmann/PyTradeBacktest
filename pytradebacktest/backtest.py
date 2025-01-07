@@ -1,10 +1,10 @@
 from typing import Type
-from fx_lib.strategy import FxStrategy
 
-from fx_backtest.broker import BacktestBroker
-from fx_backtest.data import MarketData
+from pytrade.strategy import FxStrategy
 
-from fx_backtest.strategy import BacktestStrategyWrapper
+from pytradebacktest.broker import BacktestBroker
+from pytradebacktest.data import MarketData
+from pytradebacktest.strategy import BacktestStrategyWrapper
 
 
 class Backtest:
@@ -29,16 +29,15 @@ class Backtest:
 
         strategy = BacktestStrategyWrapper(broker, self.data, self.kstrategy)
         strategy.init()
-        
+
         while self.data.next():
 
             broker.next()
             await strategy.next()
 
-
         # Increment data points
-            # Update indicators
-            # Update trades
+        # Update indicators
+        # Update trades
         # Claculate results/stats
         pass
 

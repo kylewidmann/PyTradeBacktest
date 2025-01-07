@@ -25,6 +25,7 @@ RUN curl -sSL https://install.python-poetry.org | python3 - \
 
 WORKDIR /app/${PROJECT_DIR}
 COPY ${PROJECT_DIR}/pyproject.toml ${PROJECT_DIR}/poetry.lock ./
+COPY lib lib/
 RUN poetry install --only main
 
 ##################################################
@@ -74,6 +75,7 @@ RUN set -ex \
 WORKDIR /app
 COPY --chown=${APP_USER}:${APP_GROUP} . ./
 RUN poetry install
+RUN chown ${APP_USER}:${APP_GROUP} .
 USER ${APP_USER}
 
 ENTRYPOINT ["/app/scripts/entrypoint.sh"]

@@ -1,9 +1,11 @@
 from typing import Callable
-from fx_lib.interfaces.broker import IBroker
-from fx_lib.models.order import OrderRequest
-from fx_lib.models.instruments import Instrument, Granularity, Candlestick
 
-from fx_backtest.data import MarketData
+from pytrade.interfaces.broker import IBroker
+from pytrade.models.instruments import Candlestick, Granularity, Instrument
+from pytrade.models.order import OrderRequest
+
+from pytradebacktest.data import MarketData
+
 
 class BacktestBroker(IBroker):
 
@@ -32,6 +34,6 @@ class BacktestBroker(IBroker):
         callback: Callable[[Candlestick], None],
     ):
         pass
-    
+
     def next(self):
         pass
