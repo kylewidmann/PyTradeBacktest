@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "fx-backtest"
+name = "pytradebacktest"
 version = "0.1.0"
 description = ""
 authors = ["Kyle Widmann <Kyle.Widmann@gmail.com>"]
@@ -7,9 +7,9 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-fx-strategy = {path = "../fx-strategy", develop = true}
-pandas-stubs = "^2.2.2.240603"
-backtesting = "^0.3.3"
+pytrade = {path = "lib/PyTrade", develop = true}
+pandas = "^2.2.2"
+pytest-asyncio = "^0.25.1"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -48,7 +48,3 @@ exclude_also = [
 ]
 omit = [
 ]
-
-[[tool.mypy.overrides]]
-module = "backtesting.*"
-ignore_missing_imports = true
