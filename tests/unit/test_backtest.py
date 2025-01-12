@@ -1,6 +1,6 @@
 import pytest
 from pytrade.models.indicator import Indicator
-from pytrade.models.instruments import CandleSubscription, Granularity, FxInstrument
+from pytrade.models.instruments import CandleSubscription, FxInstrument, Granularity
 from pytrade.strategy import FxStrategy
 
 from pytradebacktest.backtest import Backtest

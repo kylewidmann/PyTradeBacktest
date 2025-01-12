@@ -1,7 +1,7 @@
 from typing import Callable
 
 from pytrade.interfaces.broker import IBroker
-from pytrade.models.instruments import Candlestick, Granularity, Instrument
+from pytrade.models.instruments import Candlestick, FxInstrument, Granularity
 from pytrade.models.order import OrderRequest
 
 from pytradebacktest.data import MarketData
@@ -29,7 +29,7 @@ class BacktestBroker(IBroker):
 
     def subscribe(
         self,
-        instrument: Instrument,
+        instrument: FxInstrument,
         granularity: Granularity,
         callback: Callable[[Candlestick], None],
     ):

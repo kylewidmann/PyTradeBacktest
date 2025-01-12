@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 from pytrade.events.event import Event
 from pytrade.models.indicator import Indicator
-from pytrade.models.instruments import Granularity, IInstrumentData, FxInstrument
+from pytrade.models.instruments import FxInstrument, Granularity, IInstrumentData
 
 from pytradebacktest.data import CsvDataSource, CsvMarketDataLoader, MarketData
 
@@ -94,6 +94,7 @@ def test_csv_sources() -> list[CsvDataSource]:
         ),
     ]
 
+
 @pytest.fixture(scope="module")
 def test_stock_sources() -> list[CsvDataSource]:
     return [
@@ -108,6 +109,7 @@ def test_stock_sources() -> list[CsvDataSource]:
 @pytest.fixture(scope="function")
 def test_fx_universe(test_csv_sources):
     return MarketData(CsvMarketDataLoader(test_csv_sources))
+
 
 @pytest.fixture(scope="function")
 def test_stock_universe(test_stock_sources):

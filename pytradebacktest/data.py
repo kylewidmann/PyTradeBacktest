@@ -6,8 +6,8 @@ import pandas as pd
 from pandas import Timedelta, Timestamp
 from pytrade.models.instruments import (
     CandleData,
-    Granularity,
     FxInstrument,
+    Granularity,
     InstrumentCandles,
 )
 
@@ -23,7 +23,9 @@ class DataSource:
 
 class CsvDataSource(DataSource):
 
-    def __init__(self, path: str, instrument: FxInstrument | str, granularity: Granularity):
+    def __init__(
+        self, path: str, instrument: FxInstrument | str, granularity: Granularity
+    ):
         super().__init__(instrument, granularity)
         self.path = path
 
@@ -31,7 +33,7 @@ class CsvDataSource(DataSource):
 class MarketDataLoader:
 
     @abstractmethod
-    def load(self) -> dict[Tuple[FxInstrument, Granularity], pd.DataFrame]:
+    def load(self) -> dict[Tuple[FxInstrument | str, Granularity], pd.DataFrame]:
         raise NotImplementedError
 
 
@@ -66,7 +68,7 @@ class MarketData:
     @property
     def index(self):
         return self._index
-    
+
     def __len__(self):
         span = self._end_index - self._start_index
         return int(span / self._granularity)
@@ -152,7 +154,9 @@ class BacktestCandleData(CandleData):
 
     def __init__(self):
         self._max_size = -1
-        self._data: dict[tuple[FxInstrument, Granularity], BacktestInstrumentCandles] = {}
+        self._data: dict[
+            tuple[FxInstrument, Granularity], BacktestInstrumentCandles
+        ] = {}
         self._index = None
 
     def __new__(cls, *args, **kwargs):

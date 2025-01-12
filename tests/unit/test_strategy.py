@@ -3,7 +3,7 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 from pytrade.models.indicator import Indicator
-from pytrade.models.instruments import CandleSubscription, Granularity, FxInstrument
+from pytrade.models.instruments import CandleSubscription, FxInstrument, Granularity
 from pytrade.strategy import FxStrategy
 
 from pytradebacktest.broker import BacktestBroker
