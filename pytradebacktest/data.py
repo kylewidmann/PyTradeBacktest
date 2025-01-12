@@ -6,8 +6,8 @@ import pandas as pd
 from pandas import Timedelta, Timestamp
 from pytrade.models.instruments import (
     CandleData,
+    FxInstrument,
     Granularity,
-    Instrument,
     InstrumentCandles,
 )
 
@@ -16,14 +16,16 @@ from pytradebacktest.utils import load_csv
 
 class DataSource:
 
-    def __init__(self, instrument: Instrument, granularity: Granularity):
+    def __init__(self, instrument: FxInstrument | str, granularity: Granularity):
         self.instrument = instrument
         self.granularity = granularity
 
 
 class CsvDataSource(DataSource):
 
-    def __init__(self, path: str, instrument: Instrument, granularity: Granularity):
+    def __init__(
+        self, path: str, instrument: FxInstrument | str, granularity: Granularity
+    ):
         super().__init__(instrument, granularity)
         self.path = path
 
@@ -31,7 +33,7 @@ class CsvDataSource(DataSource):
 class MarketDataLoader:
 
     @abstractmethod
-    def load(self) -> dict[Tuple[Instrument, Granularity], pd.DataFrame]:
+    def load(self) -> dict[Tuple[FxInstrument | str, Granularity], pd.DataFrame]:
         raise NotImplementedError
 
 
@@ -40,7 +42,7 @@ class CsvMarketDataLoader(MarketDataLoader):
     def __init__(self, sources: list[CsvDataSource]):
         self.sources = sources
 
-    def load(self) -> dict[Tuple[Instrument, Granularity], pd.DataFrame]:
+    def load(self) -> dict[Tuple[FxInstrument | str, Granularity], pd.DataFrame]:
         _sources = dict()
 
         for source in self.sources:
@@ -57,7 +59,6 @@ class MarketData:
 
     def __init__(self, loader: MarketDataLoader):
         self._sources = loader.load()
-        # self._candle_events: dict[Tuple[Instrument, Granularity], CandlestickEvent] = {}
         self._init_timeframe()
 
     @property
@@ -67,6 +68,10 @@ class MarketData:
     @property
     def index(self):
         return self._index
+
+    def __len__(self):
+        span = self._end_index - self._start_index
+        return int(span / self._granularity)
 
     def _init_timeframe(self):
         _start = None
@@ -107,6 +112,7 @@ class MarketData:
             raise RuntimeError("Unable to determine end time for market data.")
 
         self._index: Timestamp = _start - _granularity
+        self._start_index = _start
         self._granularity: Timedelta = _granularity
         self._end_index: Timestamp = _end
 
@@ -119,7 +125,7 @@ class MarketData:
 class BacktestInstrumentCandles(InstrumentCandles):
 
     def __init__(
-        self, data: pd.DataFrame, instrument: Instrument, granularity: Granularity
+        self, data: pd.DataFrame, instrument: FxInstrument, granularity: Granularity
     ):
         super().__init__(data, max_size=-1)
         self._index = self._data.index[0]
@@ -148,7 +154,9 @@ class BacktestCandleData(CandleData):
 
     def __init__(self):
         self._max_size = -1
-        self._data: dict[tuple[Instrument, Granularity], BacktestInstrumentCandles] = {}
+        self._data: dict[
+            tuple[FxInstrument, Granularity], BacktestInstrumentCandles
+        ] = {}
         self._index = None
 
     def __new__(cls, *args, **kwargs):
@@ -168,7 +176,7 @@ class BacktestCandleData(CandleData):
             candles.index = self._index
 
     def populate(
-        self, df: pd.DataFrame, instrument: Instrument, granularity: Granularity
+        self, df: pd.DataFrame, instrument: FxInstrument, granularity: Granularity
     ):
         key = (instrument, granularity)
         instrument_candles: BacktestInstrumentCandles = self._data.get(

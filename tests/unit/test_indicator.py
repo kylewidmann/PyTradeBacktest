@@ -9,7 +9,7 @@ def test_indicator_values(data: np.ndarray, indicator: Indicator):
     assert (indicator._values == data).all()
 
 
-def test_indicator_updates(test_universe: MarketData, indicator: Indicator):
+def test_indicator_updates(test_fx_universe: MarketData, indicator: Indicator):
 
-    while test_universe.next():
+    while test_fx_universe.next():
         pass
