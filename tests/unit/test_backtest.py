@@ -1,11 +1,11 @@
 import pytest
 from pytrade.models.indicator import Indicator
-from pytrade.models.instruments import CandleSubscription, Granularity, Instrument
+from pytrade.models.instruments import CandleSubscription, Granularity, FxInstrument
 from pytrade.strategy import FxStrategy
 
 from pytradebacktest.backtest import Backtest
 
-BACKTEST_INSTRUMENT = Instrument.EURUSD
+BACKTEST_INSTRUMENT = FxInstrument.EURUSD
 BACKTEST_GRANULARITY = Granularity.M5
 
 
@@ -43,7 +43,7 @@ class BacktestStrategy(FxStrategy):
 
 
 @pytest.mark.asyncio
-async def test_backtest_increments_indicator(test_universe):
+async def test_backtest_increments_indicator(test_fx_universe):
 
-    test = Backtest(test_universe, BacktestStrategy, 10000)
+    test = Backtest(test_fx_universe, BacktestStrategy, 10000)
     await test.run()
