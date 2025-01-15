@@ -59,7 +59,7 @@ class MarketData:
 
     def __init__(self, loader: MarketDataLoader):
         self._sources = loader.load()
-        self._init_timeframe()
+        self._init_index()
 
     @property
     def universe(self):
@@ -70,56 +70,33 @@ class MarketData:
         return self._index
 
     def __len__(self):
-        span = self._end_index - self._start_index
-        return int(span / self._granularity)
+        return len(self._market_index)
 
-    def _init_timeframe(self):
-        _start = None
-        _granularity = None
-        _end = None
+    def _init_index(self):
+        _market_index = pd.Index([])
         for df in self._sources.values():
-            start = df.index[0]
-            end = df.index[-1]
-            granularity = df.index[1] - df.index[0]
+            _market_index = _market_index.union(df.index)
+            self._next = self.__next()
 
-            if start:
-                if not _start:
-                    _start = start
-                elif start < _start:
-                    _start = start
-
-            if end:
-                if not _end:
-                    _end = end
-                elif end > _end:
-                    _end = end
-
-            if granularity:
-                if not _granularity:
-                    _granularity = granularity
-                elif granularity < _granularity:
-                    _granularity = granularity
-
-        if not _start:
-            raise RuntimeError("Unable to determine start time for market data.")
-
-        if not _granularity:
-            raise RuntimeError(
-                "Unable to determine smallest granularity for market data."
-            )
-
-        if not _end:
-            raise RuntimeError("Unable to determine end time for market data.")
-
-        self._index: Timestamp = _start - _granularity
-        self._start_index = _start
-        self._granularity: Timedelta = _granularity
-        self._end_index: Timestamp = _end
+        self._market_index = _market_index
+        self._index = _market_index[0]
 
     def next(self):
+        try:
+            next(self._next)
+            result = True
+        except StopIteration:
+            result = False
+        
+        return result
 
-        self._index = self._index + self._granularity
-        return self._index <= self._end_index
+    def __next(self):
+
+        for idx in self._market_index:
+            self._index = idx
+            yield True
+
+        yield False
 
 
 class BacktestInstrumentCandles(InstrumentCandles):
