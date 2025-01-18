@@ -10,6 +10,7 @@ python = "^3.10"
 pytrade = {path = "lib/PyTrade", develop = true}
 pandas = "^2.2.2"
 pytest-asyncio = "^0.25.1"
+autoflake = "^2.3.1"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -48,3 +49,6 @@ exclude_also = [
 ]
 omit = [
 ]
+
+[tool.pytest.ini_options]
+addopts = ["--import-mode=importlib"]

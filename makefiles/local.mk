@@ -33,6 +33,11 @@ mypy-local:
 lint-local: ##@lint Run lint tools
 lint-local: bandit-local black-local flake8-local isort-local mypy-local
 
+.PHONY: clean-imports
+clean-imports: ##@local Remove unused imports
+clean-imports: 
+	autoflake --in-place --remove-all-unused-imports --recursive pytradebacktest
+
 .PHONY: reformat
 reformat: ##@local Reformat module
 reformat: files ?= ${SERVICE} tests
