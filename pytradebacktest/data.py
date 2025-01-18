@@ -1,22 +1,70 @@
 from abc import abstractmethod
-from typing import Tuple
+from datetime import datetime
+from typing import Optional, Tuple
 
 import numpy as np
 import pandas as pd
-from pandas import Timedelta, Timestamp
+from pandas import Timestamp
+from pytrade.events.event import Event
+from pytrade.interfaces.data import IDataContext, IInstrumentData
 from pytrade.models.instruments import (
-    CandleData,
-    FxInstrument,
+    Instrument,
     Granularity,
-    InstrumentCandles,
 )
 
 from pytradebacktest.utils import load_csv
 
+class InstrumentData(IInstrumentData):
+
+    def __init__(self, instrument: Instrument, granularity: Granularity, df: pd.DataFrame):
+        self.__df = df
+        self.__i = len(df)
+        self.__pip: Optional[float] = None
+        self._instrument = instrument
+        self._granularity = granularity
+        self._update_event = Event()
+
+    def __len__(self):
+        return self.__i
+    
+    @property
+    def instrument(self) -> Instrument:
+        return self._instrument
+
+    @property
+    def granularity(self) -> Granularity:
+        return self._granularity
+
+    @property
+    def df(self) -> pd.DataFrame:
+        return (self.__df.iloc[:self.__i+1]
+                if self.__i < len(self.__df)
+                else self.__df
+            )
+
+    @property
+    def on_update(self) -> Event:
+        return self._update_event
+
+    @on_update.setter
+    def on_update(self, value: Event):
+        self._update_event = value
+
+    @property
+    def index(self):
+        return self.df.index[-1]
+    
+    @index.setter
+    def index(self, value: Timestamp):
+        if value in self.__df.index:
+            self.__i = self.__df.index.get_loc(value)
+
+        self._update_event()
+
 
 class DataSource:
 
-    def __init__(self, instrument: FxInstrument | str, granularity: Granularity):
+    def __init__(self, instrument: Instrument, granularity: Granularity):
         self.instrument = instrument
         self.granularity = granularity
 
@@ -24,7 +72,7 @@ class DataSource:
 class CsvDataSource(DataSource):
 
     def __init__(
-        self, path: str, instrument: FxInstrument | str, granularity: Granularity
+        self, path: str, instrument: Instrument, granularity: Granularity
     ):
         super().__init__(instrument, granularity)
         self.path = path
@@ -33,7 +81,7 @@ class CsvDataSource(DataSource):
 class MarketDataLoader:
 
     @abstractmethod
-    def load(self) -> dict[Tuple[FxInstrument | str, Granularity], pd.DataFrame]:
+    def load(self) -> list[InstrumentData]:
         raise NotImplementedError
 
 
@@ -42,29 +90,36 @@ class CsvMarketDataLoader(MarketDataLoader):
     def __init__(self, sources: list[CsvDataSource]):
         self.sources = sources
 
-    def load(self) -> dict[Tuple[FxInstrument | str, Granularity], pd.DataFrame]:
-        _sources = dict()
+    def load(self) -> list[InstrumentData]:
+        _sources = []
 
         for source in self.sources:
             df = load_csv(source.path, parse_dates=["Timestamp"])
             df = df.set_index("Timestamp")
             df.replace("", np.nan, inplace=True)
             df.dropna(inplace=True)
-            _sources[(source.instrument, source.granularity)] = df
+            instrument_data = InstrumentData(source.instrument, source.granularity, df)
+            _sources.append(instrument_data)
 
         return _sources
 
 
-class MarketData:
+class MarketData(IDataContext):
 
     def __init__(self, loader: MarketDataLoader):
         self._sources = loader.load()
         self._init_index()
 
+    def __new__(cls, *args, **kwargs):
+        if not hasattr(cls, "instance"):
+            cls.instance = super().__new__(cls)
+        # Need to handle case where instantiatied and different max size is provided
+        return cls.instance
+
     @property
     def universe(self):
         return self._sources
-
+    
     @property
     def index(self):
         return self._index
@@ -74,17 +129,16 @@ class MarketData:
 
     def _init_index(self):
         _market_index = pd.Index([])
-        for df in self._sources.values():
-            _market_index = _market_index.union(df.index)
-            self._next = self.__next()
+        for source in self._sources:
+            _market_index = _market_index.union(source.df.index)
 
+        self._next = self.__next()
         self._market_index = _market_index
         self._index = _market_index[0]
 
     def next(self):
         try:
-            next(self._next)
-            result = True
+            result = next(self._next)
         except StopIteration:
             result = False
         
@@ -93,71 +147,15 @@ class MarketData:
     def __next(self):
 
         for idx in self._market_index:
+            if idx == datetime(2024, 5, 7, 21, 2):
+                a = 1
             self._index = idx
+            for source in self._sources:
+                source.index = idx
             yield True
 
         yield False
 
+    def get(self, instrument: Instrument, granularity: Granularity) -> IInstrumentData:
+        return next(src for src in self._sources if src.instrument == instrument and src.granularity == granularity)
 
-class BacktestInstrumentCandles(InstrumentCandles):
-
-    def __init__(
-        self, data: pd.DataFrame, instrument: FxInstrument, granularity: Granularity
-    ):
-        super().__init__(data, max_size=-1)
-        self._index = self._data.index[0]
-        self._i_index = 0
-
-    @property
-    def index(self):
-        return self._index
-
-    @index.setter
-    def index(self, value: pd.Timestamp):
-        if value in self._data.index:
-            self._index = value
-
-    @property
-    def i_index(self):
-        return self._data.index.get_loc(self._index)
-
-    # def next(self):
-    #     while self._i_index < len(self._data.index):
-    #         yield self._data[self._i_index]
-    #         self._i_index += 1
-
-
-class BacktestCandleData(CandleData):
-
-    def __init__(self):
-        self._max_size = -1
-        self._data: dict[
-            tuple[FxInstrument, Granularity], BacktestInstrumentCandles
-        ] = {}
-        self._index = None
-
-    def __new__(cls, *args, **kwargs):
-        if not hasattr(cls, "instance"):
-            cls.instance = super().__new__(cls)
-        # Need to handle case where instantiatied and different max size is provided
-        return cls.instance
-
-    @property
-    def index(self):
-        return self._index
-
-    @index.setter
-    def index(self, value: pd.Timestamp):
-        self._index = value
-        for candles in self._data.values():
-            candles.index = self._index
-
-    def populate(
-        self, df: pd.DataFrame, instrument: FxInstrument, granularity: Granularity
-    ):
-        key = (instrument, granularity)
-        instrument_candles: BacktestInstrumentCandles = self._data.get(
-            key,
-            BacktestInstrumentCandles(df, instrument, granularity),
-        )
-        self._data[key] = instrument_candles

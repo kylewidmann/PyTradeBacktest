@@ -14,7 +14,7 @@ def test_init_index(test_fx_universe):
 
 
 def test_fx_length(test_fx_universe):
-    assert len(test_fx_universe) == 32930
+    assert len(test_fx_universe) == 32940
 
 
 def test_stock_length(test_stock_universe):
