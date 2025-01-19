@@ -1,22 +1,21 @@
 from abc import abstractmethod
-from datetime import datetime
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
 import pandas as pd
 from pandas import Timestamp
 from pytrade.events.event import Event
 from pytrade.interfaces.data import IDataContext, IInstrumentData
-from pytrade.models.instruments import (
-    Instrument,
-    Granularity,
-)
+from pytrade.models.instruments import Granularity, Instrument
 
 from pytradebacktest.utils import load_csv
 
+
 class InstrumentData(IInstrumentData):
 
-    def __init__(self, instrument: Instrument, granularity: Granularity, df: pd.DataFrame):
+    def __init__(
+        self, instrument: Instrument, granularity: Granularity, df: pd.DataFrame
+    ):
         self.__df = df
         self.__i = len(df)
         self.__pip: Optional[float] = None
@@ -25,8 +24,8 @@ class InstrumentData(IInstrumentData):
         self._update_event = Event()
 
     def __len__(self):
-        return self.__i
-    
+        return self.__i + 1
+
     @property
     def instrument(self) -> Instrument:
         return self._instrument
@@ -37,10 +36,9 @@ class InstrumentData(IInstrumentData):
 
     @property
     def df(self) -> pd.DataFrame:
-        return (self.__df.iloc[:self.__i+1]
-                if self.__i < len(self.__df)
-                else self.__df
-            )
+        return (
+            self.__df.iloc[: self.__i + 1] if self.__i < len(self.__df) else self.__df
+        )
 
     @property
     def on_update(self) -> Event:
@@ -51,15 +49,19 @@ class InstrumentData(IInstrumentData):
         self._update_event = value
 
     @property
+    def timestamp(self):
+        return self.index
+
+    @property
     def index(self):
         return self.df.index[-1]
-    
+
     @index.setter
     def index(self, value: Timestamp):
         if value in self.__df.index:
             self.__i = self.__df.index.get_loc(value)
 
-        self._update_event()
+            self._update_event()
 
 
 class DataSource:
@@ -71,9 +73,7 @@ class DataSource:
 
 class CsvDataSource(DataSource):
 
-    def __init__(
-        self, path: str, instrument: Instrument, granularity: Granularity
-    ):
+    def __init__(self, path: str, instrument: Instrument, granularity: Granularity):
         super().__init__(instrument, granularity)
         self.path = path
 
@@ -119,7 +119,7 @@ class MarketData(IDataContext):
     @property
     def universe(self):
         return self._sources
-    
+
     @property
     def index(self):
         return self._index
@@ -141,14 +141,12 @@ class MarketData(IDataContext):
             result = next(self._next)
         except StopIteration:
             result = False
-        
+
         return result
 
     def __next(self):
 
         for idx in self._market_index:
-            if idx == datetime(2024, 5, 7, 21, 2):
-                a = 1
             self._index = idx
             for source in self._sources:
                 source.index = idx
@@ -157,5 +155,8 @@ class MarketData(IDataContext):
         yield False
 
     def get(self, instrument: Instrument, granularity: Granularity) -> IInstrumentData:
-        return next(src for src in self._sources if src.instrument == instrument and src.granularity == granularity)
-
+        return next(
+            src
+            for src in self._sources
+            if src.instrument == instrument and src.granularity == granularity
+        )

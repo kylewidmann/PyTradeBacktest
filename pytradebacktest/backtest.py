@@ -1,5 +1,6 @@
 from typing import Type
 
+from pytrade.indicator import Indicator
 from pytrade.strategy import FxStrategy
 
 from pytradebacktest.broker import BacktestBroker
@@ -25,21 +26,32 @@ class Backtest:
 
     async def run(self):
 
-        broker = BacktestBroker(self.data)
+        # Monkey patch indicators so their update does not
+        # need to recalculate after each increment, instead
+        # store their initial values from the full data context
+        # and then increment based on the current context length
+        def increment_indicator(self):
+            if not hasattr(self, "_backtest_values"):
+                self._backtest_values = self._values.copy()
+            self._values = self._backtest_values[: len(self._data)]
 
-        strategy = BacktestStrategyWrapper(broker, self.data, self.kstrategy)
+        Indicator._update = increment_indicator
+
+
+        broker = BacktestBroker(self.data, self.cash, self.comission, self.margin)
+
+        strategy = self.kstrategy(broker, self.data)
         strategy.init()
 
         while self.data.next():
 
             broker.next()
-            await strategy.next()
+            strategy.next()
 
         # Increment data points
         # Update indicators
         # Update trades
         # Claculate results/stats
-        pass
 
     def plot(self):
         pass

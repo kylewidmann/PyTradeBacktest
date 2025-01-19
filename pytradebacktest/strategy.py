@@ -1,12 +1,11 @@
 from typing import Type
 
+from pytrade.indicator import Indicator
 from pytrade.interfaces.broker import IBroker
-from pytrade.models.indicator import Indicator
 from pytrade.strategy import FxStrategy
 
 from pytradebacktest.data import (
-    BacktestCandleData,
-    BacktestInstrumentCandles,
+    InstrumentData,
     MarketData,
 )
 
@@ -15,13 +14,10 @@ class BacktestStrategyWrapper:
 
     def __init__(self, broker: IBroker, data: MarketData, kstrategy: Type[FxStrategy]):
         self._data = data
-        self._data_context = BacktestCandleData()
-        self._strategy = kstrategy(broker, self._data_context)
+        self._strategy = kstrategy(broker, data)
         self._current_index = None
 
     def init(self):
-        for key, df in self._data.universe.items():
-            self._data_context.populate(df, key[0], key[1])
 
         self._strategy.init()
 
@@ -31,37 +27,41 @@ class BacktestStrategyWrapper:
             if isinstance(indicator, Indicator)
         }.items()
 
-        self._indicator_values = {
-            attr: indicator._values for attr, indicator in self._indicators
-        }
+        # Monkey patch indicators so their update does not
+        # need to recalculate after each increment, instead
+        # store their initial values from the full data context
+        # and then increment based on the current context length
+        def increment_indicator(self):
+            if not hasattr(self, "_backtest_values"):
+                self._backtest_values = self._values.copy()
+            self._values = self._backtest_values[: len(self._data)]
 
-        self._indicator_i_index = {attr: None for attr, indicator in self._indicators}
+        Indicator._update = increment_indicator
 
-    async def next(self) -> None:
 
-        self._data_context.index = self._data.index
+    # async def next(self) -> None:
 
-        updates = []
-        # Incrememnt indicators
-        for attr, indicator in self._indicators:
-            indicator_updated = False
-            if isinstance(indicator._data, BacktestInstrumentCandles):
-                previous_i_index = self._indicator_i_index.get(attr)
-                if previous_i_index != indicator._data.i_index:
-                    indicator._values = self._indicator_values[attr][
-                        : indicator._data.i_index + 1
-                    ]
-                    self._indicator_i_index[attr] = indicator._data.i_index
-                    indicator_updated = True
+        # updates = []
+        # # Incrememnt indicators
+        # for attr, indicator in self._indicators:
+        #     indicator_updated = False
+        #     if isinstance(indicator._data, InstrumentData):
+        #         previous_i_index = self._indicator_i_index.get(attr)
+        #         if previous_i_index != indicator._data.i_index:
+        #             indicator._values = self._indicator_values[attr][
+        #                 : indicator._data.i_index + 1
+        #             ]
+        #             self._indicator_i_index[attr] = indicator._data.i_index
+        #             indicator_updated = True
 
-            updates.append(indicator_updated)
+        #     updates.append(indicator_updated)
 
-        all_updates_received = all(updates)
+        # all_updates_received = all(updates)
 
-        # Currently making sure all indicators have been updated before calling next
-        # This aligns with the pending update logic when the strategy is event
-        # driven in live trading.  If that behavior changes this will also need to
-        # change.
-        if all_updates_received:
-            # Call _next directly so we don't wait for pending updates
-            self._strategy._next()
+        # # Currently making sure all indicators have been updated before calling next
+        # # This aligns with the pending update logic when the strategy is event
+        # # driven in live trading.  If that behavior changes this will also need to
+        # # change.
+        # if all_updates_received:
+        #     # Call _next directly so we don't wait for pending updates
+        #     self._strategy._next()

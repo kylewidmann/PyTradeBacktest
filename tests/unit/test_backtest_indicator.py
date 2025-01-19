@@ -1,16 +1,15 @@
-from datetime import datetime
-import types
 import numpy as np
 from pytrade.indicator import Indicator
 from pytrade.models.instruments import FxInstrument, Granularity
 
 from pytradebacktest.data import MarketData
-from tests.unit.conftest import TestIndicator
+
 
 class TestFxIndicator(Indicator):
 
     def _run(self, *args, **kwargs):
         return self._data.df.Open
+
 
 def test_indicator_values(data: np.ndarray, indicator: Indicator):
     assert len(indicator._values) == len(data)
@@ -22,10 +21,9 @@ def test_indicator_updates(test_fx_universe: MarketData):
     def increment_indicator(self):
         if not hasattr(self, "_backtest_values"):
             self._backtest_values = self._values.copy()
-        self._values = self._backtest_values[:len(self._data)]
+        self._values = self._backtest_values[: len(self._data)]
 
     Indicator._update = increment_indicator
-
 
     data = test_fx_universe.get(FxInstrument.GBPUSD, Granularity.M1)
     indicator = TestFxIndicator(data)
