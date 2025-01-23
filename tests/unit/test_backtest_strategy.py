@@ -1,15 +1,13 @@
 from unittest.mock import patch
 
-import pandas as pd
 import pytest
 from pytrade.indicator import Indicator
+from pytrade.instruments import CandleSubscription, FxInstrument, Granularity
 from pytrade.interfaces.data import IInstrumentData
-from pytrade.models.instruments import CandleSubscription, FxInstrument, Granularity
 from pytrade.strategy import FxStrategy
 
 from pytradebacktest.broker import BacktestBroker
 from pytradebacktest.data import MarketData
-from pytradebacktest.strategy import BacktestStrategyWrapper
 
 BACKTEST_INSTRUMENT = FxInstrument.EURUSD
 BACKTEST_GRANULARITY = Granularity.M5
@@ -99,7 +97,7 @@ async def test_strategy_indicator_updates(test_fx_universe: MarketData):
                 data_i_index = indicator._data.df.index.get_loc(test_fx_universe.index)
                 expected_length = data_i_index + 1
                 assert len(indicator._values) == expected_length
-                assert indicator == expected_indicator_values[attr][data_i_index]
+                assert indicator == expected_indicator_values[attr].iloc[data_i_index]
 
 
 @patch("pytrade.strategy.FxStrategy.sell")

@@ -4,7 +4,7 @@ import pytest
 from pytrade.data import IInstrumentData
 from pytrade.events.event import Event
 from pytrade.indicator import Indicator
-from pytrade.models.instruments import FxInstrument, Granularity
+from pytrade.instruments import FxInstrument, Granularity
 
 from pytradebacktest.data import CsvDataSource, CsvMarketDataLoader, MarketData
 

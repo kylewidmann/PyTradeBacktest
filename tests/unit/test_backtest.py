@@ -3,7 +3,7 @@ from unittest.mock import patch
 import pytest
 
 from pytradebacktest.backtest import Backtest
-from tests.unit.fixtures import SmaCross
+from tests.unit.resources.indicators import SmaCross
 
 
 @patch("pytradebacktest.backtest.BacktestBroker.order")

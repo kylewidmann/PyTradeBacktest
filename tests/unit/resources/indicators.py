@@ -3,8 +3,8 @@ from typing import Sequence
 
 import pandas as pd
 from pytrade.indicator import Indicator
+from pytrade.instruments import CandleSubscription, FxInstrument, Granularity
 from pytrade.interfaces.data import IInstrumentData
-from pytrade.models.instruments import CandleSubscription, FxInstrument, Granularity
 from pytrade.strategy import FxStrategy
 
 BACKTEST_INSTRUMENT = FxInstrument.EURUSD

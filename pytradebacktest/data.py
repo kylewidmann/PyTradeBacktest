@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 from pandas import Timestamp
 from pytrade.events.event import Event
+from pytrade.instruments import Granularity, Instrument
 from pytrade.interfaces.data import IDataContext, IInstrumentData
-from pytrade.models.instruments import Granularity, Instrument
 
 from pytradebacktest.utils import load_csv
 
@@ -17,7 +17,7 @@ class InstrumentData(IInstrumentData):
         self, instrument: Instrument, granularity: Granularity, df: pd.DataFrame
     ):
         self.__df = df
-        self.__i = len(df)
+        self.__i = len(df) - 1
         self.__pip: Optional[float] = None
         self._instrument = instrument
         self._granularity = granularity
@@ -53,13 +53,21 @@ class InstrumentData(IInstrumentData):
         return self.index
 
     @property
-    def index(self):
-        return self.df.index[-1]
+    def prev_timestamp(self):
+        return self.__df.index[self.__i - 1]
+
+    @property
+    def i_index(self):
+        return self.__i
+
+    @property
+    def index(self) -> Timestamp:
+        return self.__df.index[self.__i]
 
     @index.setter
     def index(self, value: Timestamp):
         if value in self.__df.index:
-            self.__i = self.__df.index.get_loc(value)
+            self.__i = self.__df.index.get_loc(value)  # type: ignore
 
             self._update_event()
 

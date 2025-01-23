@@ -1,11 +1,11 @@
 import numpy as np
 from pytrade.indicator import Indicator
-from pytrade.models.instruments import FxInstrument, Granularity
+from pytrade.instruments import FxInstrument, Granularity
 
 from pytradebacktest.data import MarketData
 
 
-class TestFxIndicator(Indicator):
+class OpenIndicator(Indicator):
 
     def _run(self, *args, **kwargs):
         return self._data.df.Open
@@ -26,10 +26,10 @@ def test_indicator_updates(test_fx_universe: MarketData):
     Indicator._update = increment_indicator
 
     data = test_fx_universe.get(FxInstrument.GBPUSD, Granularity.M1)
-    indicator = TestFxIndicator(data)
+    indicator = OpenIndicator(data)
 
     data2 = test_fx_universe.get(FxInstrument.GBPUSD, Granularity.M5)
-    indicator2 = TestFxIndicator(data2)
+    indicator2 = OpenIndicator(data2)
 
     assert len(data) != len(data2)
 

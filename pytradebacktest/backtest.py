@@ -5,7 +5,6 @@ from pytrade.strategy import FxStrategy
 
 from pytradebacktest.broker import BacktestBroker
 from pytradebacktest.data import MarketData
-from pytradebacktest.strategy import BacktestStrategyWrapper
 
 
 class Backtest:
@@ -36,7 +35,6 @@ class Backtest:
             self._values = self._backtest_values[: len(self._data)]
 
         Indicator._update = increment_indicator
-
 
         broker = BacktestBroker(self.data, self.cash, self.comission, self.margin)
 
