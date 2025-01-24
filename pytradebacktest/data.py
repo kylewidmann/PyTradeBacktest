@@ -3,7 +3,7 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-from pandas import Timestamp
+from pandas import Index, Timestamp
 from pytrade.events.event import Event
 from pytrade.instruments import Granularity, Instrument
 from pytrade.interfaces.data import IDataContext, IInstrumentData
@@ -132,11 +132,15 @@ class MarketData(IDataContext):
     def index(self):
         return self._index
 
+    @property
+    def i(self) -> int:
+        return self._market_index.get_loc(self._index)
+
     def __len__(self):
         return len(self._market_index)
 
     def _init_index(self):
-        _market_index = pd.Index([])
+        _market_index: Index[Timestamp] = pd.Index([])
         for source in self._sources:
             _market_index = _market_index.union(source.df.index)
 

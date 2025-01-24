@@ -4,6 +4,7 @@ from pytrade.instruments import Granularity
 
 from pytradebacktest.broker import BacktestBroker
 from pytradebacktest.data import MarketData
+from pytradebacktest.exceptions import OutOfMoneyError
 
 
 @pytest.mark.parametrize("iterations", [1, 10, 50, 75, 100])
@@ -201,3 +202,34 @@ def test_take_profit_order(index, buy, test_stock_universe: MarketData):
     trade = broker.closed_trades[0]
     assert trade.entry_price == entry_price
     assert trade.exit_price == limit_price
+
+
+def test_negative_equity(test_stock_universe: MarketData):
+    broker = BacktestBroker(test_stock_universe, 200, 0, 1, False, False, False)
+
+    broker.order(Order("GOOG", -1, stop_loss_on_fill=350))
+
+    test_stock_universe.next()
+    broker.next()
+
+    assert len(broker.orders) == 1
+    assert len(broker.trades) == 1
+
+    for _ in range(1, 300):
+        test_stock_universe.next()
+        broker.next()
+    
+    test_stock_universe.next()
+    with pytest.raises(OutOfMoneyError):
+        broker.next()
+
+    assert len(broker.closed_trades) == 1
+    assert broker.equity == 0
+    assert broker._cash == 0
+
+
+def test_change_position(test_stock_universe: MarketData):
+    pass
+
+def test_reduce_position(test_stock_universe: MarketData):
+    pass

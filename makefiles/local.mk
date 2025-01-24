@@ -48,5 +48,5 @@ reformat: clean-imports
 PHONY: test-local
 test-local: ##@local Run test suite
 test-local: venv
-	${POETRY} run pytest -s --tb=native --durations=5 --cov=${SERVICE} --cov-report=html tests
+	${POETRY} run pytest -s --tb=native --durations=5 --cov=${SERVICE} --cov-report=term-missing tests
 	${POETRY} run coverage report --fail-under=90

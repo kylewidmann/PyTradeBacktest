@@ -9,6 +9,7 @@ from pytrade.interfaces.data import IInstrumentData
 from pytrade.models import Order, Position, Trade
 
 from pytradebacktest.data import MarketData
+from pytradebacktest.exceptions import OutOfMoneyError
 from pytradebacktest.order import OrderContext
 
 
@@ -32,7 +33,7 @@ class BacktestBroker(IBroker):
         self._hedging = hedging
         self._exclusive_orders = exclusive_orders
 
-        self._equity = 0
+        self._equity = np.tile(np.nan, len(self._data))
         self.orders: list[Order] = []
         self.trades: list[Trade] = []
         self.positions: list[Position] = []
@@ -66,10 +67,6 @@ class BacktestBroker(IBroker):
 
             self.orders.append(order)
 
-    def _replace_order(self, order: Order, new_order: Order):
-        idx = self.orders.index(order)
-        self.orders[idx] = new_order
-
     def subscribe(
         self, instrument: Instrument, granularity: Granularity
     ) -> IInstrumentData:
@@ -77,25 +74,29 @@ class BacktestBroker(IBroker):
 
     def next(self):
         self._process_orders()
-        # equity = self.equity
+        self._update_equity()
 
+    def _update_equity(self):
         # Update equity
-
-        # self._equity[] = self.equity
-        # # If equity is negative, set all to 0 and stop the simulation
-        # if equity <= 0:
-        #     assert self.margin_available <= 0
-        #     for trade in self.trades:
-        #         self._close_trade(trade, self._data.Close[-1], i)
-        #     self._cash = 0
-        #     self._equity[i:] = 0
-        #     raise _OutOfMoneyError
+        equity = self.equity
+        i = self._data.i
+        self._equity[i] = equity
+        # If equity is negative, set all to 0 and stop the simulation
+        if equity <= 0:
+            if self.margin_available > 0:
+                raise RuntimeError
+            for trade in self.trades:
+                _data = self._get_instrument_data(trade.instrument)
+                self._close_trade(trade, _data.Close.iloc[-1], _data.timestamp)
+            self._cash = 0
+            self._equity[i:] = 0
+            raise OutOfMoneyError
 
     def _process_orders(self):
 
         reprocess_orders = False
         for order in list(self.orders):
-            _data = self._get_instrument_price(order.instrument)
+            _data = self._get_instrument_data(order.instrument)
 
             with OrderContext(order, _data, self._trade_on_close) as ctx:
                 # Related SL/TP order already removed
@@ -257,7 +258,7 @@ class BacktestBroker(IBroker):
         self.closed_trades.append(trade)
         self._cash += trade.pl
 
-    def _get_instrument_price(self, instrument: Instrument):
+    def _get_instrument_data(self, instrument: Instrument):
         _instrument_data = [
             src
             for src in self._data._sources
