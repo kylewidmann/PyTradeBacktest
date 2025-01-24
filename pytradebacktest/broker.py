@@ -72,6 +72,9 @@ class BacktestBroker(IBroker):
     ) -> IInstrumentData:
         return self._data.get(instrument, granularity)
 
+    def get_position(self, instrument: Instrument):
+        return Position(instrument, self.trades)
+
     def next(self):
         self._process_orders()
         self._update_equity()
@@ -188,7 +191,7 @@ class BacktestBroker(IBroker):
                 self._close_trade(trade, ctx.entry_price, ctx.timestmap)
                 _need_size += trade.size
             else:
-                self._reduce_trade(trade, ctx.entry_price, _need_size, ctx.timestmap)
+                self._reduce_trade(trade, _need_size, ctx.entry_price, ctx.timestmap)
                 _need_size = 0
 
             if not _need_size:
@@ -233,7 +236,7 @@ class BacktestBroker(IBroker):
             close_trade = trade
             closed = True
         else:
-            trade.reduce(size)
+            trade.reduce(size_left)
             if trade.sl:
                 trade.sl.reduce(-size_left)
             if trade.tp:

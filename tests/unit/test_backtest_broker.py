@@ -218,7 +218,7 @@ def test_negative_equity(test_stock_universe: MarketData):
     for _ in range(1, 300):
         test_stock_universe.next()
         broker.next()
-    
+
     test_stock_universe.next()
     with pytest.raises(OutOfMoneyError):
         broker.next()
@@ -229,7 +229,83 @@ def test_negative_equity(test_stock_universe: MarketData):
 
 
 def test_change_position(test_stock_universe: MarketData):
-    pass
+    broker = BacktestBroker(test_stock_universe, 10000, 0, 1, False, False, False)
+    goog_position = broker.get_position("GOOG")
+
+    broker.order(Order("GOOG", 100))
+    test_stock_universe.next()
+    broker.next()
+
+    assert len(broker.orders) == 0
+    assert len(broker.trades) == 1
+
+    assert goog_position.is_long is True
+    assert goog_position.size == 100
+    assert goog_position.pl == 0
+    assert goog_position.pl_pct == 0
+    assert len(goog_position.trades) == 1
+
+    broker.order(Order("GOOG", -200))
+    test_stock_universe.next()
+    broker.next()
+
+    assert goog_position.is_long is False
+    assert goog_position.size == -200
+    assert goog_position.pl == 0
+    assert goog_position.pl_pct == 0
+    assert len(goog_position.trades) == 1
+
 
 def test_reduce_position(test_stock_universe: MarketData):
-    pass
+    broker = BacktestBroker(test_stock_universe, 10000, 0, 1, False, False, False)
+    goog_position = broker.get_position("GOOG")
+
+    broker.order(Order("GOOG", 100))
+    test_stock_universe.next()
+    broker.next()
+
+    assert len(broker.orders) == 0
+    assert len(broker.trades) == 1
+
+    assert goog_position.is_long is True
+    assert goog_position.size == 100
+    assert goog_position.pl == 0
+    assert goog_position.pl_pct == 0
+    assert len(goog_position.trades) == 1
+
+    broker.order(Order("GOOG", -50))
+    test_stock_universe.next()
+    broker.next()
+
+    assert goog_position.is_long is True
+    assert goog_position.size == 50
+    assert goog_position.pl == 0
+    assert goog_position.pl_pct == 0
+
+
+def test_close_position(test_stock_universe: MarketData):
+    broker = BacktestBroker(test_stock_universe, 10000, 0, 1, False, False, False)
+    goog_position = broker.get_position("GOOG")
+
+    broker.order(Order("GOOG", 100))
+    test_stock_universe.next()
+    broker.next()
+
+    assert len(broker.orders) == 0
+    assert len(broker.trades) == 1
+
+    assert goog_position.is_long is True
+    assert goog_position.size == 100
+    assert goog_position.pl == 0
+    assert goog_position.pl_pct == 0
+    assert len(goog_position.trades) == 1
+
+    broker.order(Order("GOOG", -100))
+    test_stock_universe.next()
+    broker.next()
+
+    assert goog_position.is_long is False
+    assert goog_position.is_short is False
+    assert goog_position.size == 0
+    assert goog_position.pl == 0
+    assert goog_position.pl_pct == 0
