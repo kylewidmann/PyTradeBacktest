@@ -50,7 +50,7 @@ def test_stop_order_conversion(price_index, buy, test_stock_universe: MarketData
         else goog_data[:price_index].Low.idxmin()
     )
     price_idx = goog_data.index.get_loc(price_timestamp)
-    price = goog_data.High[price_idx] if buy else goog_data.Low[price_idx]
+    price = goog_data.High.iloc[price_idx] if buy else goog_data.Low.iloc[price_idx]
     stop = price - 0.01 if buy else price + 0.01  # Set to 1 cent past price
     size = 100 if buy else -100
     broker.order(Order("GOOG", size, stop=stop))
@@ -119,7 +119,7 @@ def test_stop_loss_order(index, buy, test_stock_universe: MarketData):
     )
     stop_idx = goog_data.index.get_loc(stop_timestmap)
     stop_price = (
-        goog_data.Low[stop_idx] + 0.01 if buy else goog_data.High[stop_idx] - 0.01
+        goog_data.Low.iloc[stop_idx] + 0.01 if buy else goog_data.High.iloc[stop_idx] - 0.01
     )
     size = 100 if buy else -100
     entry_price = goog_data.Open.iloc[index]
