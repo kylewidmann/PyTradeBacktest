@@ -1,9 +1,10 @@
 import numpy as np
 import pandas as pd
 import pytest
+from pytrade.data import IInstrumentData
 from pytrade.events.event import Event
-from pytrade.models.indicator import Indicator
-from pytrade.models.instruments import FxInstrument, Granularity, IInstrumentData
+from pytrade.indicator import Indicator
+from pytrade.instruments import FxInstrument, Granularity
 
 from pytradebacktest.data import CsvDataSource, CsvMarketDataLoader, MarketData
 
@@ -114,3 +115,13 @@ def test_fx_universe(test_csv_sources):
 @pytest.fixture(scope="function")
 def test_stock_universe(test_stock_sources):
     return MarketData(CsvMarketDataLoader(test_stock_sources))
+
+
+@pytest.fixture(scope="function")
+def backtest_indicator():
+    pass
+
+
+@pytest.fixture(scope="function")
+def backtest_strategy():
+    pass

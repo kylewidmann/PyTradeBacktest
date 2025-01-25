@@ -1,14 +1,13 @@
 from unittest.mock import patch
 
-import pandas as pd
 import pytest
-from pytrade.models.indicator import Indicator
-from pytrade.models.instruments import CandleSubscription, FxInstrument, Granularity
+from pytrade.indicator import Indicator
+from pytrade.instruments import CandleSubscription, FxInstrument, Granularity
+from pytrade.interfaces.data import IInstrumentData
 from pytrade.strategy import FxStrategy
 
 from pytradebacktest.broker import BacktestBroker
 from pytradebacktest.data import MarketData
-from pytradebacktest.strategy import BacktestStrategyWrapper
 
 BACKTEST_INSTRUMENT = FxInstrument.EURUSD
 BACKTEST_GRANULARITY = Granularity.M5
@@ -49,43 +48,56 @@ class BacktestStrategy(FxStrategy):
         Evaluate indicators and submit orders to the broker
         """
         if self.eurusd_m5:
-            self.sell(1)
+            self.sell(BACKTEST_INSTRUMENT, 1)
         else:
-            self.buy(1)
+            self.buy(BACKTEST_INSTRUMENT, 1)
 
 
 @pytest.mark.asyncio
 async def test_strategy_indicator_updates(test_fx_universe: MarketData):
 
-    broker = BacktestBroker(test_fx_universe)
+    broker = BacktestBroker(test_fx_universe, 10000, 0, 1)
 
-    strategy = BacktestStrategyWrapper(broker, test_fx_universe, BacktestStrategy)
+    def increment_indicator(self):
+        if not hasattr(self, "_backtest_values"):
+            self._backtest_values = self._values.copy()
+        self._values = self._backtest_values[: len(self._data)]
+
+    Indicator._update = increment_indicator
+
+    strategy = BacktestStrategy(broker, test_fx_universe)
     strategy.init()
 
-    m1_data: pd.DataFrame = test_fx_universe._sources.get(
-        (BACKTEST_INSTRUMENT, Granularity.M1)
-    )
-    m5_data: pd.DataFrame = test_fx_universe._sources.get(
-        (BACKTEST_INSTRUMENT, Granularity.M5)
-    )
+    m1_data: IInstrumentData = test_fx_universe.get(
+        BACKTEST_INSTRUMENT, Granularity.M1
+    ).df.copy()
+    m5_data: IInstrumentData = test_fx_universe.get(
+        BACKTEST_INSTRUMENT, Granularity.M5
+    ).df.copy()
     indicator_data = {"eurusd_m1": m1_data, "eurusd_m5": m5_data}
     expected_indicator_values = {
         "eurusd_m1": m1_data.Open > m1_data.Close,
         "eurusd_m5": m5_data.Open > m5_data.Close,
     }
 
-    for attr, indicator in strategy._indicators:
+    _indicators = {
+        attr: indicator
+        for attr, indicator in strategy.__dict__.items()
+        if isinstance(indicator, Indicator)
+    }.items()
+
+    for attr, indicator in _indicators:
         assert len(indicator._values) == len(indicator_data[attr])
 
     while test_fx_universe.next():
 
-        await strategy.next()
-        for attr, indicator in strategy._indicators:
+        strategy.next()
+        for attr, indicator in _indicators:
             if test_fx_universe.index in indicator._data.df.index:
                 data_i_index = indicator._data.df.index.get_loc(test_fx_universe.index)
                 expected_length = data_i_index + 1
                 assert len(indicator._values) == expected_length
-                assert indicator == expected_indicator_values[attr][data_i_index]
+                assert indicator == expected_indicator_values[attr].iloc[data_i_index]
 
 
 @patch("pytrade.strategy.FxStrategy.sell")
@@ -95,17 +107,24 @@ async def test_strategy_indicator_orders(
     mock_buy, mock_sell, test_fx_universe: MarketData
 ):
 
-    broker = BacktestBroker(test_fx_universe)
+    broker = BacktestBroker(test_fx_universe, 10000, 0, 1)
 
-    strategy = BacktestStrategyWrapper(broker, test_fx_universe, BacktestStrategy)
+    def increment_indicator(self):
+        if not hasattr(self, "_backtest_values"):
+            self._backtest_values = self._values.copy()
+        self._values = self._backtest_values[: len(self._data)]
+
+    Indicator._update = increment_indicator
+
+    strategy = BacktestStrategy(broker, test_fx_universe)
     strategy.init()
 
-    test_data: pd.DataFrame = test_fx_universe._sources.get(
-        (BACKTEST_INSTRUMENT, BACKTEST_GRANULARITY)
-    )
+    test_data = test_fx_universe.get(
+        BACKTEST_INSTRUMENT, BACKTEST_GRANULARITY
+    ).df.copy()
 
     while test_fx_universe.next():
-        await strategy.next()
+        strategy.next()
 
     expected_buy_calls = test_data[test_data.Open <= test_data.Close].count().Open
     expected_sell_calls = test_data[test_data.Open > test_data.Close].count().Open

@@ -33,15 +33,20 @@ mypy-local:
 lint-local: ##@lint Run lint tools
 lint-local: bandit-local black-local flake8-local isort-local mypy-local
 
+.PHONY: clean-imports
+clean-imports: ##@local Remove unused imports
+clean-imports: 
+	autoflake --in-place --remove-all-unused-imports --recursive pytradebacktest tests
+
 .PHONY: reformat
 reformat: ##@local Reformat module
 reformat: files ?= ${SERVICE} tests
-reformat:
+reformat: clean-imports
 	${POETRY} run isort --overwrite-in-place ${files}
 	${POETRY} run black ${files}
 
 PHONY: test-local
 test-local: ##@local Run test suite
 test-local: venv
-	${POETRY} run pytest -s --tb=native --durations=5 --cov=${SERVICE} --cov-report=html tests
+	${POETRY} run pytest -s --tb=native --durations=5 --cov=${SERVICE} --cov-report=term-missing tests
 	${POETRY} run coverage report --fail-under=90
