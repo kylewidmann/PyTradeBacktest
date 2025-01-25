@@ -50,29 +50,23 @@ class BacktestBroker(IBroker):
 
     def order(self, order: Order):
 
-        # Put the new order in the order queue,
-        # inserting SL/TP/trade-closing orders in-front
-        sl_tp_close = False
-        if sl_tp_close:
-            self.orders.insert(0, order)
-        else:
-            # If exclusive orders (each new order auto-closes previous orders/position),
-            # cancel all non-contingent orders and close all open trades beforehand
-            # if self._exclusive_orders:
-            #     for o in self.orders:
-            #         if not o.is_contingent:
-            #             o.cancel()
-            #     for t in self.trades:
-            #         t.close()
+        # If exclusive orders (each new order auto-closes previous orders/position),
+        # cancel all non-contingent orders and close all open trades beforehand
+        if self._exclusive_orders:
+            for o in list(self.orders):
+                if not o.is_contingent:
+                    self.orders.remove(o)
+            for t in self.trades:
+                self.orders.insert(0, Order(t.instrument, -t.size))
 
-            self.orders.append(order)
+        self.orders.append(order)
 
     def subscribe(
         self, instrument: Instrument, granularity: Granularity
     ) -> IInstrumentData:
         return self._data.get(instrument, granularity)
 
-    def get_position(self, instrument: Instrument):
+    def get_position(self, instrument: Instrument) -> Position:
         return Position(instrument, self.trades)
 
     def next(self):
@@ -167,12 +161,15 @@ class BacktestBroker(IBroker):
         if not self._hedging:
             _need_size = self._update_position(ctx)
 
-        if abs(_need_size) * ctx.entry_price > self.margin_available * self._leverage:
-            self.orders.remove(order)
-        elif _need_size:
+        # IF we have the margin to cover the order
+        _insufficent_funds = (
+            abs(_need_size) * ctx.entry_price > self.margin_available * self._leverage
+        )
+        if _need_size and not _insufficent_funds:
             self._open_trade(ctx)
-            self.orders.remove(order)
             new_trade = True
+
+        self.orders.remove(order)
 
         return new_trade
 

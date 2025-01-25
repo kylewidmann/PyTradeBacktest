@@ -309,3 +309,27 @@ def test_close_position(test_stock_universe: MarketData):
     assert goog_position.size == 0
     assert goog_position.pl == 0
     assert goog_position.pl_pct == 0
+
+
+def test_exclusive_orders(test_stock_universe: MarketData):
+    broker = BacktestBroker(test_stock_universe, 10000, 0, 1, False, False, True)
+    broker.order(Order("GOOG", 10))
+    test_stock_universe.next()
+    broker.next()
+
+    assert len(broker.orders) == 0
+    assert len(broker.trades) == 1
+
+    broker.order(Order("GOOG", 20))
+
+    # 1 to close existing position and then the new order
+    assert len(broker.orders) == 2
+    assert len(broker.trades) == 1
+    assert len(broker.closed_trades) == 0
+
+    test_stock_universe.next()
+    broker.next()
+
+    assert len(broker.orders) == 0
+    assert len(broker.trades) == 1
+    assert len(broker.closed_trades) == 1
