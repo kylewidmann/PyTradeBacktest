@@ -1,3 +1,5 @@
+from math import copysign
+
 import numpy as np
 from pytrade.broker import Order
 
@@ -6,16 +8,21 @@ from pytradebacktest.data import InstrumentData
 
 class OrderContext:
 
-    def __init__(self, order: Order, data: InstrumentData, trade_on_close: bool):
+    def __init__(
+        self,
+        order: Order,
+        data: InstrumentData,
+        trade_on_close: bool,
+        commission: float,
+        leverage: float,
+        margin_available: float,
+    ):
         self._order = order
         self._data = data
         self._trade_on_close = trade_on_close
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
+        self._commission = commission
+        self._leverage = leverage
+        self._margin_availalbe = margin_available
 
     @property
     def order(self):
@@ -72,3 +79,22 @@ class OrderContext:
             stop_default = -np.inf if self.order.is_long else np.inf
             price = func(price, self.order.stop or stop_default)
         return price
+
+    @property
+    def adjusted_entry_price(self):
+        return self.entry_price * (1 + copysign(self._commission, self.order.size))
+
+    @property
+    def adjusted_size(self):
+        order = self.order
+        _size = order.size
+        if -1 < _size < 1:
+            _size = copysign(
+                int(
+                    (self._margin_availalbe * self._leverage * abs(order.size))
+                    // self.adjusted_entry_price
+                ),
+                order.size,
+            )
+
+        return _size

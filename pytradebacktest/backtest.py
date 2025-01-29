@@ -1,10 +1,12 @@
 from typing import Type
 
+import pandas as pd
 from pytrade.indicator import Indicator
 from pytrade.strategy import FxStrategy
 
 from pytradebacktest.broker import BacktestBroker
 from pytradebacktest.data import MarketData
+from pytradebacktest.stats import Stats
 
 
 class Backtest:
@@ -46,10 +48,14 @@ class Backtest:
             broker.next()
             strategy.next()
 
-        # Increment data points
-        # Update indicators
-        # Update trades
+        # Close any open trades:
+        broker.close_trades()
+        # Call broker one last time to clean up any outstanding orders from strategy
+        broker.next()
+
         # Claculate results/stats
+        equity = pd.Series(broker._equity).bfill().fillna(broker._cash).values
+        return Stats(broker.closed_trades, equity, self.data, strategy)
 
     def plot(self):
         pass

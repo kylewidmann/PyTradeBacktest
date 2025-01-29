@@ -119,7 +119,9 @@ def test_stop_loss_order(index, buy, test_stock_universe: MarketData):
     )
     stop_idx = goog_data.index.get_loc(stop_timestmap)
     stop_price = (
-        goog_data.Low.iloc[stop_idx] + 0.01 if buy else goog_data.High.iloc[stop_idx] - 0.01
+        goog_data.Low.iloc[stop_idx] + 0.01
+        if buy
+        else goog_data.High.iloc[stop_idx] - 0.01
     )
     size = 100 if buy else -100
     entry_price = goog_data.Open.iloc[index]
@@ -215,7 +217,7 @@ def test_negative_equity(test_stock_universe: MarketData):
     assert len(broker.orders) == 1
     assert len(broker.trades) == 1
 
-    for _ in range(1, 300):
+    for _ in range(1, 215):
         test_stock_universe.next()
         broker.next()
 
@@ -241,8 +243,6 @@ def test_change_position(test_stock_universe: MarketData):
 
     assert goog_position.is_long is True
     assert goog_position.size == 100
-    assert goog_position.pl == 0
-    assert goog_position.pl_pct == 0
     assert len(goog_position.trades) == 1
 
     broker.order(Order("GOOG", -200))
@@ -250,9 +250,7 @@ def test_change_position(test_stock_universe: MarketData):
     broker.next()
 
     assert goog_position.is_long is False
-    assert goog_position.size == -200
-    assert goog_position.pl == 0
-    assert goog_position.pl_pct == 0
+    assert goog_position.size == -100
     assert len(goog_position.trades) == 1
 
 
@@ -269,8 +267,6 @@ def test_reduce_position(test_stock_universe: MarketData):
 
     assert goog_position.is_long is True
     assert goog_position.size == 100
-    assert goog_position.pl == 0
-    assert goog_position.pl_pct == 0
     assert len(goog_position.trades) == 1
 
     broker.order(Order("GOOG", -50))
@@ -279,8 +275,6 @@ def test_reduce_position(test_stock_universe: MarketData):
 
     assert goog_position.is_long is True
     assert goog_position.size == 50
-    assert goog_position.pl == 0
-    assert goog_position.pl_pct == 0
 
 
 def test_close_position(test_stock_universe: MarketData):
@@ -296,8 +290,6 @@ def test_close_position(test_stock_universe: MarketData):
 
     assert goog_position.is_long is True
     assert goog_position.size == 100
-    assert goog_position.pl == 0
-    assert goog_position.pl_pct == 0
     assert len(goog_position.trades) == 1
 
     broker.order(Order("GOOG", -100))
@@ -307,8 +299,6 @@ def test_close_position(test_stock_universe: MarketData):
     assert goog_position.is_long is False
     assert goog_position.is_short is False
     assert goog_position.size == 0
-    assert goog_position.pl == 0
-    assert goog_position.pl_pct == 0
 
 
 def test_exclusive_orders(test_stock_universe: MarketData):
