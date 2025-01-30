@@ -1,3 +1,4 @@
+import sys
 from numbers import Number
 from typing import Sequence
 
@@ -95,14 +96,16 @@ class SmaCross(FxStrategy):
         """
         Create indicators to be used for signals in the `_next` method.
         """
-        data = self.get_data("GOOG", Granularity.D1)
-        self.sma1 = Sma(data, self.fast)
-        self.sma2 = Sma(data, self.slow)
+        self.data = self.get_data("GOOG", Granularity.D1)
+        self.sma1 = Sma(self.data, self.fast)
+        self.sma2 = Sma(self.data, self.slow)
 
     def _next(self):
         if crossover(self.sma1._values, self.sma2._values):
-            # self.position.close()
-            self.buy("GOOG", 10)
+            self.broker.close_position("GOOG")
+            rel_size = 1 - sys.float_info.epsilon
+            self.buy("GOOG", rel_size)
         elif crossover(self.sma2._values, self.sma1._values):
-            # self.position.close()
-            self.sell("GOOG", 10)
+            self.broker.close_position("GOOG")
+            rel_size = 1 - sys.float_info.epsilon
+            self.sell("GOOG", rel_size)
