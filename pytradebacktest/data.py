@@ -102,8 +102,8 @@ class CsvMarketDataLoader(MarketDataLoader):
         _sources = []
 
         for source in self.sources:
-            df = load_csv(source.path, parse_dates=["Timestamp"])
-            df = df.set_index("Timestamp")
+            df = load_csv(source.path, parse_dates=["datetime"])
+            df = df.set_index("datetime")
             df.replace("", np.nan, inplace=True)
             df.dropna(inplace=True)
             instrument_data = InstrumentData(source.instrument, source.granularity, df)
