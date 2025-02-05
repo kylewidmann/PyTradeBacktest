@@ -169,7 +169,8 @@ class BacktestBroker(IBroker):
             closed = self._reduce_trade(
                 trade, _order_size, ctx.entry_price, ctx.entry_time
             )
-            if closed:
+            # IF we closed, it removes SL and TP
+            if not closed:
                 self.orders.remove(order)
 
     def _process_market_order(self, ctx: OrderContext):
@@ -280,9 +281,9 @@ class BacktestBroker(IBroker):
 
     def _close_trade(self, trade: Trade, price: float, timestamp: Timestamp):
         self.trades.remove(trade)
-        if trade.sl:
+        if trade.sl != None:
             self.orders.remove(trade.sl)
-        if trade.tp:
+        if trade.tp != None:
             self.orders.remove(trade.tp)
 
         trade.close(price, timestamp)
