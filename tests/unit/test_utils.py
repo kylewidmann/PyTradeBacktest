@@ -13,5 +13,5 @@ from pytradebacktest.utils import load_csv
     ],
 )
 def test_load_csvs(path, count):
-    df = load_csv(path, parse_dates=["Timestamp"])
+    df = load_csv(path, parse_dates=["datetime"])
     assert df.shape[0] == count

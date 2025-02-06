@@ -250,15 +250,15 @@ Worst Trade [%]: {self.worst_trade_return},
 
     @property
     def best_trade_return(self):
-        return self.returns.max() * 100
+        return self.returns.max()
 
     @property
     def worst_trade_return(self):
-        return self.returns.min() * 100
+        return self.returns.min()
 
     @property
     def avg_trade_return(self):
-        return self._geometric_mean(self.returns) * 100
+        return self._geometric_mean(self.returns/100) * 100
 
     @property
     def max_trade_duration(self):
@@ -275,7 +275,7 @@ Worst Trade [%]: {self.worst_trade_return},
 
     @property
     def expectancy(self):
-        return self.returns.mean() * 100
+        return self.returns.mean()
 
     @property
     def SQN(self):

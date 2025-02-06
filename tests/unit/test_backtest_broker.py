@@ -23,7 +23,7 @@ def test_fill_market_order(iterations, test_stock_universe: MarketData):
     assert len(broker.orders) == 0
     assert len(broker.trades) == 1
     trade = broker.trades[0]
-    assert trade.entry_price == goog_data.Open.iloc[iterations - 1]
+    assert trade.entry_price == goog_data.open.iloc[iterations - 1]
 
 
 def test_market_order_not_enough_equity(test_stock_universe: MarketData):
@@ -45,12 +45,12 @@ def test_stop_order_conversion(price_index, buy, test_stock_universe: MarketData
     broker = BacktestBroker(test_stock_universe, 100000, 0, 1, False, False, False)
 
     price_timestamp = (
-        goog_data[:price_index].High.idxmax()
+        goog_data[:price_index].high.idxmax()
         if buy
-        else goog_data[:price_index].Low.idxmin()
+        else goog_data[:price_index].low.idxmin()
     )
     price_idx = goog_data.index.get_loc(price_timestamp)
-    price = goog_data.High.iloc[price_idx] if buy else goog_data.Low.iloc[price_idx]
+    price = goog_data.high.iloc[price_idx] if buy else goog_data.low.iloc[price_idx]
     stop = price - 0.01 if buy else price + 0.01  # Set to 1 cent past price
     size = 100 if buy else -100
     broker.order(Order("GOOG", size, stop=stop))
@@ -80,12 +80,12 @@ def test_limit_order_conversion(price_index, buy, test_stock_universe: MarketDat
     broker = BacktestBroker(test_stock_universe, 100000, 0, 1, False, False, False)
 
     price_timestamp = (
-        goog_data[:price_index].Low.idxmin()
+        goog_data[:price_index].low.idxmin()
         if buy
-        else goog_data[:price_index].High.idxmax()
+        else goog_data[:price_index].high.idxmax()
     )
     price_idx = goog_data.index.get_loc(price_timestamp)
-    price = goog_data.Low.iloc[price_idx] if buy else goog_data.High.iloc[price_idx]
+    price = goog_data.low.iloc[price_idx] if buy else goog_data.high.iloc[price_idx]
     limit = price + 0.01 if buy else price - 0.01  # Set to 1 cent past price
     size = 100 if buy else -100
     broker.order(Order("GOOG", size, limit=limit))
@@ -115,16 +115,16 @@ def test_stop_loss_order(index, buy, test_stock_universe: MarketData):
     broker = BacktestBroker(test_stock_universe, 100000, 0, 1, False, False, False)
 
     stop_timestmap = (
-        goog_data[index:].Low.idxmin() if buy else goog_data[index:].High.idxmax()
+        goog_data[index:].low.idxmin() if buy else goog_data[index:].high.idxmax()
     )
     stop_idx = goog_data.index.get_loc(stop_timestmap)
     stop_price = (
-        goog_data.Low.iloc[stop_idx] + 0.01
+        goog_data.low.iloc[stop_idx] + 0.01
         if buy
-        else goog_data.High.iloc[stop_idx] - 0.01
+        else goog_data.high.iloc[stop_idx] - 0.01
     )
     size = 100 if buy else -100
-    entry_price = goog_data.Open.iloc[index]
+    entry_price = goog_data.open.iloc[index]
 
     for i in range(index):
         test_stock_universe.next()
@@ -162,16 +162,16 @@ def test_take_profit_order(index, buy, test_stock_universe: MarketData):
     broker = BacktestBroker(test_stock_universe, 100000, 0, 1, False, False, False)
 
     limit_timestmap = (
-        goog_data[index:].High.idxmax() if buy else goog_data[index:].Low.idxmin()
+        goog_data[index:].high.idxmax() if buy else goog_data[index:].low.idxmin()
     )
     limit_idx = goog_data.index.get_loc(limit_timestmap)
     limit_price = (
-        goog_data.High.iloc[limit_idx] - 0.01
+        goog_data.high.iloc[limit_idx] - 0.01
         if buy
-        else goog_data.Low.iloc[limit_idx] + 0.01
+        else goog_data.low.iloc[limit_idx] + 0.01
     )
     size = 100 if buy else -100
-    entry_price = goog_data.Open.iloc[index]
+    entry_price = goog_data.open.iloc[index]
 
     for i in range(index):
         test_stock_universe.next()
@@ -246,6 +246,56 @@ def test_change_position(test_stock_universe: MarketData):
     assert len(goog_position.trades) == 1
 
     broker.order(Order("GOOG", -200))
+    test_stock_universe.next()
+    broker.next()
+
+    assert goog_position.is_long is False
+    assert goog_position.size == -100
+    assert len(goog_position.trades) == 1
+
+
+def test_close_and_open_oppposite_position(test_stock_universe: MarketData):
+    broker = BacktestBroker(test_stock_universe, 10000, 0, 1, False, False, False)
+    goog_position = broker.get_position("GOOG")
+
+    broker.order(Order("GOOG", 100))
+    test_stock_universe.next()
+    broker.next()
+
+    assert len(broker.orders) == 0
+    assert len(broker.trades) == 1
+
+    assert goog_position.is_long is True
+    assert goog_position.size == 100
+    assert len(goog_position.trades) == 1
+
+    broker.close_position("GOOG")
+    broker.order(Order("GOOG", -100))
+    test_stock_universe.next()
+    broker.next()
+
+    assert goog_position.is_long is False
+    assert goog_position.size == -100
+    assert len(goog_position.trades) == 1
+
+
+def test_close_and_open_oppposite_position_with_sl_tp(test_stock_universe: MarketData):
+    broker = BacktestBroker(test_stock_universe, 10000, 0, 1, False, False, False)
+    goog_position = broker.get_position("GOOG")
+
+    broker.order(Order("GOOG", 100, stop_loss_on_fill=80, take_profit_on_fill=140))
+    test_stock_universe.next()
+    broker.next()
+
+    assert len(broker.orders) == 2
+    assert len(broker.trades) == 1
+
+    assert goog_position.is_long is True
+    assert goog_position.size == 100
+    assert len(goog_position.trades) == 1
+
+    broker.close_position("GOOG")
+    broker.order(Order("GOOG", -100))
     test_stock_universe.next()
     broker.next()
 

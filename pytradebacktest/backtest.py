@@ -1,11 +1,14 @@
 from typing import Type
 
 import pandas as pd
+from progressbar import ProgressBar
 from pytrade.indicator import Indicator
+from pytrade.instruments import Granularity
 from pytrade.strategy import FxStrategy
 
 from pytradebacktest.broker import BacktestBroker
 from pytradebacktest.data import MarketData
+from pytradebacktest.plot import plot
 from pytradebacktest.stats import Stats
 
 
@@ -38,24 +41,38 @@ class Backtest:
 
         Indicator._update = increment_indicator
 
-        broker = BacktestBroker(self.data, self.cash, self.comission, self.margin)
+        self.broker = BacktestBroker(self.data, self.cash, self.comission, self.margin)
 
-        strategy = self.kstrategy(broker, self.data)
+        strategy = self.kstrategy(self.broker, self.data)
         strategy.init()
 
-        while self.data.next():
+        with ProgressBar(max_value=len(self.data), redirect_stdout=True) as bar:
+            while self.data.next():
 
-            broker.next()
-            strategy.next()
+                self.broker.next()
+                strategy.next()
+
+                bar.next()
 
         # Close any open trades:
-        broker.close_trades()
+        self.broker.close_trades()
         # Call broker one last time to clean up any outstanding orders from strategy
-        broker.next()
+        self.broker.next()
 
         # Claculate results/stats
-        equity = pd.Series(broker._equity).bfill().fillna(broker._cash).values
-        return Stats(broker.closed_trades, equity, self.data, strategy)
+        equity = pd.Series(self.broker._equity).bfill().fillna(self.broker._cash).values
+        return Stats(self.broker.closed_trades, equity, self.data, strategy)
 
     def plot(self):
-        pass
+        instruments = set([t.instrument for t in self.broker.closed_trades])
+        for instrument in instruments:
+            goog_data = self.data.get(instrument, Granularity.M1)
+            trades = [
+                trade
+                for trade in self.broker.closed_trades
+                if trade.instrument == instrument
+            ]
+            equity_df = pd.DataFrame(
+                self.broker._equity, index=self.data._market_index, columns=["Equity"]
+            )
+            plot(goog_data, equity_df, trades)

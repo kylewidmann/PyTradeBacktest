@@ -1,9 +1,9 @@
 from unittest.mock import patch
 
+import pandas as pd
 import pytest
 from pytrade.indicator import Indicator
 from pytrade.instruments import CandleSubscription, FxInstrument, Granularity
-from pytrade.interfaces.data import IInstrumentData
 from pytrade.strategy import FxStrategy
 
 from pytradebacktest.broker import BacktestBroker
@@ -68,16 +68,16 @@ async def test_strategy_indicator_updates(test_fx_universe: MarketData):
     strategy = BacktestStrategy(broker, test_fx_universe)
     strategy.init()
 
-    m1_data: IInstrumentData = test_fx_universe.get(
+    m1_data: pd.DataFrame = test_fx_universe.get(
         BACKTEST_INSTRUMENT, Granularity.M1
     ).df.copy()
-    m5_data: IInstrumentData = test_fx_universe.get(
+    m5_data: pd.DataFrame = test_fx_universe.get(
         BACKTEST_INSTRUMENT, Granularity.M5
     ).df.copy()
     indicator_data = {"eurusd_m1": m1_data, "eurusd_m5": m5_data}
     expected_indicator_values = {
-        "eurusd_m1": m1_data.Open > m1_data.Close,
-        "eurusd_m5": m5_data.Open > m5_data.Close,
+        "eurusd_m1": m1_data.open > m1_data.close,
+        "eurusd_m5": m5_data.open > m5_data.close,
     }
 
     _indicators = {
@@ -119,16 +119,16 @@ async def test_strategy_indicator_orders(
     strategy = BacktestStrategy(broker, test_fx_universe)
     strategy.init()
 
-    test_data = test_fx_universe.get(
+    test_data: pd.DataFrame = test_fx_universe.get(
         BACKTEST_INSTRUMENT, BACKTEST_GRANULARITY
     ).df.copy()
 
     while test_fx_universe.next():
         strategy.next()
 
-    expected_buy_calls = test_data[test_data.Open <= test_data.Close].count().Open
-    expected_sell_calls = test_data[test_data.Open > test_data.Close].count().Open
-    assert expected_buy_calls + expected_sell_calls == test_data.count().Open
+    expected_buy_calls = test_data[test_data.open <= test_data.close].count().open
+    expected_sell_calls = test_data[test_data.open > test_data.close].count().open
+    assert expected_buy_calls + expected_sell_calls == test_data.count().open
 
     assert mock_buy.call_count == expected_buy_calls
     assert mock_sell.call_count == expected_sell_calls

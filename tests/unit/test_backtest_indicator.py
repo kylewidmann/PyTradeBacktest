@@ -8,7 +8,7 @@ from pytradebacktest.data import MarketData
 class OpenIndicator(Indicator):
 
     def _run(self, *args, **kwargs):
-        return self._data.df.Open
+        return self._data.df.open
 
 
 def test_indicator_values(data: np.ndarray, indicator: Indicator):
