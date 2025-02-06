@@ -57,8 +57,8 @@ Date:%{{x}}<br>
 Entry:%{{y}}<br>
 Exit:{trade.exit_price}<br>
 Size:{trade.size}<br>
-{("SL: {trade.sl.stop}<br>" if trade.sl is not None else "")}
-{("TP: {trade.tp.limit}<br>" if trade.tp is not None else "")}
+{(f"SL: {trade.sl.stop}<br>" if trade.sl is not None else "")}
+{(f"TP: {trade.tp.limit}<br>" if trade.tp is not None else "")}
 P/L:{trade.pl}
 """,
             ),
