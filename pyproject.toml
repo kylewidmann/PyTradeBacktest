@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-pytrade = {path = "lib/PyTrade", develop = true}
+pytrade = {path = "libs/PyTrade", develop = true}
 pandas = "^2.2.2"
 pytest-asyncio = "^0.25.1"
 autoflake = "^2.3.1"

@@ -12,5 +12,8 @@
         "**/docker",
         "**/mypy_cache",
         "**/pytest_cache"
+    ],
+    "python.analysis.extraPaths": [
+        "./libs/PyTrade"
     ]
 }
