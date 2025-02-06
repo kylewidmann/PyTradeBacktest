@@ -281,9 +281,9 @@ class BacktestBroker(IBroker):
 
     def _close_trade(self, trade: Trade, price: float, timestamp: Timestamp):
         self.trades.remove(trade)
-        if trade.sl != None:
+        if trade.sl is not None:
             self.orders.remove(trade.sl)
-        if trade.tp != None:
+        if trade.tp is not None:
             self.orders.remove(trade.tp)
 
         trade.close(price, timestamp)
