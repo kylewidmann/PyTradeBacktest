@@ -258,7 +258,7 @@ Worst Trade [%]: {self.worst_trade_return},
 
     @property
     def avg_trade_return(self):
-        return self._geometric_mean(self.returns/100) * 100
+        return self._geometric_mean(self.returns / 100) * 100
 
     @property
     def max_trade_duration(self):

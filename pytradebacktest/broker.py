@@ -5,11 +5,12 @@ from pandas import Timestamp
 from pytrade.instruments import MINUTES_MAP, Granularity, Instrument
 from pytrade.interfaces.broker import IBroker
 from pytrade.interfaces.data import IInstrumentData
-from pytrade.models import Order, Position, Trade
+from pytrade.models import Order, Trade
 
 from pytradebacktest.data import MarketData
 from pytradebacktest.exceptions import OutOfMoneyError
 from pytradebacktest.order import OrderContext
+from pytradebacktest.position import Position
 
 
 class BacktestBroker(IBroker):
