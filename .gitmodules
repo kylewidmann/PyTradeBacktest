@@ -1,3 +1,0 @@
-[submodule "lib/PyTrade"]
-	path = libs/PyTrade
-	url = https://github.com/kylewidmann/PyTrade.git
