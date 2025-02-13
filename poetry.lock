@@ -1076,9 +1076,9 @@ pytest = "^8.1.1"
 
 [package.source]
 type = "git"
-url = "https://github.com/kylewidmann/PyTrade"
+url = "https://github.com/kylewidmann/PyTrade/"
 reference = "v1.0.0"
-resolved_reference = "670db9cefceb448290628911d090fdc875e0d738"
+resolved_reference = "632c325e23c474b1bb0bd573d5448bb597509d3a"
 
 [[package]]
 name = "pytz"
@@ -1325,4 +1325,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "68ef4e26393022412915332cbd9433fe1c5eca268a5d7d58e4bfb1c0ae96ff2c"
+content-hash = "3642dec6b4b2a0a6c9d7e32df0c7663f025613b46dcfcd09b08de1f83020e2b5"
