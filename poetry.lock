@@ -1062,7 +1062,7 @@ description = ""
 optional = false
 python-versions = "^3.10"
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
 autoflake = "^2.3.1"
@@ -1074,8 +1074,10 @@ pandas-stubs = "^2.2.2.240603"
 pytest = "^8.1.1"
 
 [package.source]
-type = "directory"
-url = "libs/PyTrade"
+type = "git"
+url = "https://github.com/kylewidmann/PyTrade"
+reference = "v1.0.0"
+resolved_reference = "670db9cefceb448290628911d090fdc875e0d738"
 
 [[package]]
 name = "pytz"
@@ -1322,4 +1324,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "af84f6b8da79b13cdf1a6856eeee42860b986a2359d1d11f612c445b0159235a"
+content-hash = "68ef4e26393022412915332cbd9433fe1c5eca268a5d7d58e4bfb1c0ae96ff2c"
