@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from datetime import timezone
 from typing import Optional
 
 import numpy as np
@@ -106,6 +107,8 @@ class CsvMarketDataLoader(MarketDataLoader):
             df = df.set_index("datetime")
             df.replace("", np.nan, inplace=True)
             df.dropna(inplace=True)
+            index: DatetimeIndex = pd.to_datetime(df.index)
+            df.index = index.tz_localize(tz=timezone.utc)
             instrument_data = InstrumentData(source.instrument, source.granularity, df)
             _sources.append(instrument_data)
 
@@ -143,6 +146,8 @@ class MarketData(IDataContext):
         _market_index: DatetimeIndex = DatetimeIndex([])
         for source in self._sources:
             _market_index = _market_index.union(source.df.index)
+
+        _market_index = pd.to_datetime(_market_index)
 
         self._next = self.__next()
         self._market_index = _market_index
