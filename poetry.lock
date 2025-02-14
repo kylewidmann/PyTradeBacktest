@@ -1077,8 +1077,8 @@ pytest = "^8.1.1"
 [package.source]
 type = "git"
 url = "https://github.com/kylewidmann/PyTrade/"
-reference = "v1.0.0"
-resolved_reference = "7f1f4fd4879791b73048b31d081cbcf673a95ca2"
+reference = "oanda"
+resolved_reference = "ebb22d72d338d12b5c040649377aa7a7f85d3382"
 
 [[package]]
 name = "pytz"
@@ -1325,4 +1325,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "3642dec6b4b2a0a6c9d7e32df0c7663f025613b46dcfcd09b08de1f83020e2b5"
+content-hash = "357469b4d04c2310ad6da0eaed56e9b3c443347f850364e4fb1e3659d5348f47"
