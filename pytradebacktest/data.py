@@ -107,7 +107,7 @@ class CsvMarketDataLoader(MarketDataLoader):
             df = df.set_index("datetime")
             df.replace("", np.nan, inplace=True)
             df.dropna(inplace=True)
-            index: DatetimeIndex = df.index
+            index: DatetimeIndex = pd.to_datetime(df.index)
             df.index = index.tz_localize(tz=timezone.utc)
             instrument_data = InstrumentData(source.instrument, source.granularity, df)
             _sources.append(instrument_data)
