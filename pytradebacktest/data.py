@@ -108,7 +108,7 @@ class CsvMarketDataLoader(MarketDataLoader):
             df.replace("", np.nan, inplace=True)
             df.dropna(inplace=True)
             index: DatetimeIndex = df.index
-            index.tz_localize(tz=timezone.utc)
+            df.index = index.tz_localize(tz=timezone.utc)
             instrument_data = InstrumentData(source.instrument, source.granularity, df)
             _sources.append(instrument_data)
 
@@ -147,8 +147,10 @@ class MarketData(IDataContext):
         for source in self._sources:
             _market_index = _market_index.union(source.df.index)
 
+        _market_index = pd.to_datetime(_market_index)
+
         self._next = self.__next()
-        self._market_index = _market_index.tz_localize(tz=timezone.utc)
+        self._market_index = _market_index
         self._index = _market_index[0]
 
     def next(self):
