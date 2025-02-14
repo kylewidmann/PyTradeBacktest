@@ -117,6 +117,8 @@ class CsvMarketDataLoader(MarketDataLoader):
 
 class MarketData(IDataContext):
 
+    _index: pd.Timestamp
+
     def __init__(self, loader: MarketDataLoader):
         self._sources = loader.load()
         self._init_index()
@@ -132,8 +134,16 @@ class MarketData(IDataContext):
         return self._sources
 
     @property
-    def index(self):
+    def index(self) -> pd.Timestamp:
         return self._index
+
+    def load_instrument_candles(
+        self, instrument: Instrument, granularity: Granularity, count: int
+    ):
+        _data = self.get(instrument, granularity)
+        _instrument_timestamp: pd.Timestamp = _data.df.index[count]
+        if _instrument_timestamp > self._index:
+            self._index = _instrument_timestamp
 
     @property
     def i(self) -> int:
@@ -163,7 +173,10 @@ class MarketData(IDataContext):
 
     def __next(self):
 
-        for idx in self._market_index:
+        # Slice index incase some candles were loaded prior to starting
+        # the test run
+        _index = self._market_index[self.i :]
+        for idx in _index:
             self._index = idx
             for source in self._sources:
                 source.index = idx

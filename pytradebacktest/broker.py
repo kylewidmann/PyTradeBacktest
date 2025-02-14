@@ -65,6 +65,11 @@ class BacktestBroker(IBroker):
 
         self.orders.append(order)
 
+    def load_instrument_candles(
+        self, instrument: Instrument, granularity: Granularity, count: int
+    ):
+        self._data.load_instrument_candles(instrument, granularity, count)
+
     def subscribe(
         self, instrument: Instrument, granularity: Granularity
     ) -> IInstrumentData:
