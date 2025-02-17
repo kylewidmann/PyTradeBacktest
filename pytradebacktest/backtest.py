@@ -23,12 +23,12 @@ class Backtest:
         margin: float = 1.0,
     ):
         self.data = data
-        self.kstrategy = kstrategy
+        self._strategy = kstrategy
         self.cash = cash
         self.comission = comission
         self.margin = margin
 
-    async def run(self):
+    async def run(self, **kwargs):
 
         # Monkey patch indicators so their update does not
         # need to recalculate after each increment, instead
@@ -43,7 +43,7 @@ class Backtest:
 
         self.broker = BacktestBroker(self.data, self.cash, self.comission, self.margin)
 
-        strategy = self.kstrategy(self.broker, self.data)
+        strategy = self._strategy(self.broker, self.data, **kwargs)
         strategy.init()
 
         with ProgressBar(max_value=len(self.data), redirect_stdout=True) as bar:

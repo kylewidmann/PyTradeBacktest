@@ -82,6 +82,8 @@ class OrderContext:
 
     @property
     def adjusted_entry_price(self):
+        # Need to update to account for currency pairs and base vs counter currency
+        # as well as spread
         return self.entry_price * (1 + copysign(self._commission, self.order.size))
 
     @property
