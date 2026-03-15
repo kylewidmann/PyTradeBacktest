@@ -14,7 +14,6 @@ from pytradebacktest.position import Position
 
 
 class BacktestBroker(IBroker):
-
     def __init__(
         self,
         data: MarketData,
@@ -24,6 +23,7 @@ class BacktestBroker(IBroker):
         trade_on_close=False,
         hedging=False,
         exclusive_orders=False,
+        spread=0.0,
     ):
         self._data = data
         self._cash = cash
@@ -32,6 +32,7 @@ class BacktestBroker(IBroker):
         self._trade_on_close = trade_on_close
         self._hedging = hedging
         self._exclusive_orders = exclusive_orders
+        self._spread = spread
 
         self._equity = np.tile(np.nan, len(self._data))
         self.orders: list[Order] = []
@@ -53,7 +54,6 @@ class BacktestBroker(IBroker):
         return self._leverage
 
     def order(self, order: Order):
-
         # If exclusive orders (each new order auto-closes previous orders/position),
         # cancel all non-contingent orders and close all open trades beforehand
         if self._exclusive_orders:
@@ -65,14 +65,10 @@ class BacktestBroker(IBroker):
 
         self.orders.append(order)
 
-    def load_instrument_candles(
-        self, instrument: Instrument, granularity: Granularity, count: int
-    ):
+    def load_instrument_candles(self, instrument: Instrument, granularity: Granularity, count: int):
         self._data.load_instrument_candles(instrument, granularity, count)
 
-    def subscribe(
-        self, instrument: Instrument, granularity: Granularity
-    ) -> IInstrumentData:
+    def subscribe(self, instrument: Instrument, granularity: Granularity) -> IInstrumentData:
         return self._data.get(instrument, granularity)
 
     def get_position(self, instrument: Instrument) -> Position:
@@ -81,9 +77,7 @@ class BacktestBroker(IBroker):
     def close_position(self, instrument: Instrument):
         position = self.get_position(instrument)
         for trade in position.trades:
-            self.orders.insert(
-                0, Order(trade.instrument, -trade.size, parent_trade=trade)
-            )
+            self.orders.insert(0, Order(trade.instrument, -trade.size, parent_trade=trade))
 
     def next(self):
         self._process_orders()
@@ -107,7 +101,6 @@ class BacktestBroker(IBroker):
             raise OutOfMoneyError
 
     def _process_orders(self):
-
         reprocess_orders = False
         for order in list(self.orders):
             _data = self._get_instrument_data(order.instrument)
@@ -119,6 +112,7 @@ class BacktestBroker(IBroker):
                 self._commission,
                 self._leverage,
                 self.margin_available,
+                self._spread,
             )
             # Related SL/TP order already removed
             if order not in self.orders:
@@ -172,9 +166,7 @@ class BacktestBroker(IBroker):
         _order_size = ctx.adjusted_size
 
         if trade in self.trades:
-            closed = self._reduce_trade(
-                trade, _order_size, ctx.entry_price, ctx.entry_time
-            )
+            closed = self._reduce_trade(trade, _order_size, ctx.entry_price, ctx.entry_time)
             # If this is a SL/TP closing the trade already removed it.
             if closed and order in self.orders:
                 self.orders.remove(order)
@@ -230,9 +222,7 @@ class BacktestBroker(IBroker):
     def _open_trade(self, ctx: OrderContext, tag: Optional[str] = None):
         order = ctx.order
         size = ctx.adjusted_size
-        trade = Trade(
-            order.instrument, size, ctx.entry_price, ctx.entry_time, ctx.data, tag
-        )
+        trade = Trade(order.instrument, size, ctx.entry_price, ctx.entry_time, ctx.data, tag)
         self.trades.append(trade)
 
         if order.take_profit_on_fill:
@@ -255,9 +245,7 @@ class BacktestBroker(IBroker):
             trade.sl = sl_order
             self.orders.insert(0, sl_order)
 
-    def _reduce_trade(
-        self, trade: Trade, size: int, price: float, timestamp: Timestamp
-    ):
+    def _reduce_trade(self, trade: Trade, size: int, price: float, timestamp: Timestamp):
         size_left = trade.size + size
         closed = False
 
@@ -281,9 +269,7 @@ class BacktestBroker(IBroker):
 
     def close_trades(self):
         for trade in self.trades:
-            self.orders.insert(
-                0, Order(trade.instrument, -trade.size, parent_trade=trade)
-            )
+            self.orders.insert(0, Order(trade.instrument, -trade.size, parent_trade=trade))
 
     def _close_trade(self, trade: Trade, price: float, timestamp: Timestamp):
         self.trades.remove(trade)

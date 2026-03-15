@@ -6,17 +6,14 @@ import numpy as np
 import pandas as pd
 from pandas import DatetimeIndex, Timestamp
 from pytrade.events.event import Event
-from pytrade.instruments import Granularity, Instrument
+from pytrade.instruments import Granularity, Instrument, UPDATE_MAP
 from pytrade.interfaces.data import IDataContext, IInstrumentData
 
 from pytradebacktest.utils import load_csv
 
 
 class InstrumentData(IInstrumentData):
-
-    def __init__(
-        self, instrument: Instrument, granularity: Granularity, df: pd.DataFrame
-    ):
+    def __init__(self, instrument: Instrument, granularity: Granularity, df: pd.DataFrame):
         self.__df = df
         self.__i = len(df) - 1
         self.__pip: Optional[float] = None
@@ -37,9 +34,7 @@ class InstrumentData(IInstrumentData):
 
     @property
     def df(self) -> pd.DataFrame:
-        return (
-            self.__df.iloc[: self.__i + 1] if self.__i < len(self.__df) else self.__df
-        )
+        return self.__df.iloc[: self.__i + 1] if self.__i < len(self.__df) else self.__df
 
     @property
     def on_update(self) -> Event:
@@ -74,28 +69,24 @@ class InstrumentData(IInstrumentData):
 
 
 class DataSource:
-
     def __init__(self, instrument: Instrument, granularity: Granularity):
         self.instrument = instrument
         self.granularity = granularity
 
 
 class CsvDataSource(DataSource):
-
     def __init__(self, path: str, instrument: Instrument, granularity: Granularity):
         super().__init__(instrument, granularity)
         self.path = path
 
 
 class MarketDataLoader:
-
     @abstractmethod
     def load(self) -> list[InstrumentData]:
         raise NotImplementedError
 
 
 class CsvMarketDataLoader(MarketDataLoader):
-
     def __init__(self, sources: list[CsvDataSource]):
         self.sources = sources
 
@@ -116,7 +107,6 @@ class CsvMarketDataLoader(MarketDataLoader):
 
 
 class MarketData(IDataContext):
-
     _index: pd.Timestamp
 
     def __init__(self, loader: MarketDataLoader):
@@ -137,9 +127,7 @@ class MarketData(IDataContext):
     def index(self) -> pd.Timestamp:
         return self._index
 
-    def load_instrument_candles(
-        self, instrument: Instrument, granularity: Granularity, count: int
-    ):
+    def load_instrument_candles(self, instrument: Instrument, granularity: Granularity, count: int):
         _data = self.get(instrument, granularity)
         _instrument_timestamp: pd.Timestamp = _data.df.index[count]
         if _instrument_timestamp > self._index:
@@ -172,7 +160,6 @@ class MarketData(IDataContext):
         return result
 
     def __next(self):
-
         # Slice index incase some candles were loaded prior to starting
         # the test run
         _index = self._market_index[self.i :]
@@ -185,8 +172,24 @@ class MarketData(IDataContext):
         yield False
 
     def get(self, instrument: Instrument, granularity: Granularity) -> IInstrumentData:
-        return next(
+        _data: IInstrumentData = next(
             src
             for src in self._sources
-            if src.instrument == instrument and src.granularity == granularity
+            if src.instrument == instrument and src.granularity == Granularity.M1
         )
+
+        if not _data:
+            raise RuntimeError(f"Data not loaded for {instrument}")
+
+        if granularity != Granularity.M1:
+            _df = _data.df.resample(UPDATE_MAP[granularity]).agg(
+                {
+                    "open": "first",  # First value in each 15-min period
+                    "high": "max",  # Maximum value in each 15-min period
+                    "low": "min",  # Minimum value in each 15-min period
+                    "close": "last",  # Last value in each 15-min period
+                }
+            )
+            _data = InstrumentData(instrument=instrument, granularity=granularity, df=_df)
+
+        return _data

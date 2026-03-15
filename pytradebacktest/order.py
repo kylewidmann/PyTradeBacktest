@@ -7,7 +7,6 @@ from pytradebacktest.data import InstrumentData
 
 
 class OrderContext:
-
     def __init__(
         self,
         order: Order,
@@ -16,6 +15,7 @@ class OrderContext:
         commission: float,
         leverage: float,
         margin_available: float,
+        spread: float = 0.0,
     ):
         self._order = order
         self._data = data
@@ -23,6 +23,7 @@ class OrderContext:
         self._commission = commission
         self._leverage = leverage
         self._margin_availalbe = margin_available
+        self._spread = spread
 
     @property
     def order(self):
@@ -82,9 +83,12 @@ class OrderContext:
 
     @property
     def adjusted_entry_price(self):
-        # Need to update to account for currency pairs and base vs counter currency
-        # as well as spread
-        return self.entry_price * (1 + copysign(self._commission, self.order.size))
+        # Apply commission and spread
+        # For longs (buy): pay ask price (mid + spread/2)
+        # For shorts (sell): receive bid price (mid - spread/2)
+        spread_adjustment = copysign(self._spread / 2, self.order.size)
+        commission_adjustment = copysign(self._commission, self.order.size)
+        return self.entry_price * (1 + commission_adjustment) + spread_adjustment
 
     @property
     def adjusted_size(self):

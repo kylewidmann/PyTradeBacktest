@@ -9,7 +9,6 @@ from pytradebacktest.exceptions import OutOfMoneyError
 
 @pytest.mark.parametrize("iterations", [1, 10, 50, 75, 100])
 def test_fill_market_order(iterations, test_stock_universe: MarketData):
-
     goog_data = test_stock_universe.get("GOOG", Granularity.D1).df.copy()
     broker = BacktestBroker(test_stock_universe, 100000, 0, 1, False, False, False)
 
@@ -27,7 +26,6 @@ def test_fill_market_order(iterations, test_stock_universe: MarketData):
 
 
 def test_market_order_not_enough_equity(test_stock_universe: MarketData):
-
     broker = BacktestBroker(test_stock_universe, 100, 0, 1, False, False, False)
 
     test_stock_universe.next()
@@ -45,9 +43,7 @@ def test_stop_order_conversion(price_index, buy, test_stock_universe: MarketData
     broker = BacktestBroker(test_stock_universe, 100000, 0, 1, False, False, False)
 
     price_timestamp = (
-        goog_data[:price_index].high.idxmax()
-        if buy
-        else goog_data[:price_index].low.idxmin()
+        goog_data[:price_index].high.idxmax() if buy else goog_data[:price_index].low.idxmin()
     )
     price_idx = goog_data.index.get_loc(price_timestamp)
     price = goog_data.high.iloc[price_idx] if buy else goog_data.low.iloc[price_idx]
@@ -80,9 +76,7 @@ def test_limit_order_conversion(price_index, buy, test_stock_universe: MarketDat
     broker = BacktestBroker(test_stock_universe, 100000, 0, 1, False, False, False)
 
     price_timestamp = (
-        goog_data[:price_index].low.idxmin()
-        if buy
-        else goog_data[:price_index].high.idxmax()
+        goog_data[:price_index].low.idxmin() if buy else goog_data[:price_index].high.idxmax()
     )
     price_idx = goog_data.index.get_loc(price_timestamp)
     price = goog_data.low.iloc[price_idx] if buy else goog_data.high.iloc[price_idx]
@@ -114,14 +108,10 @@ def test_stop_loss_order(index, buy, test_stock_universe: MarketData):
     goog_data = test_stock_universe.get("GOOG", Granularity.D1).df.copy()
     broker = BacktestBroker(test_stock_universe, 100000, 0, 1, False, False, False)
 
-    stop_timestmap = (
-        goog_data[index:].low.idxmin() if buy else goog_data[index:].high.idxmax()
-    )
+    stop_timestmap = goog_data[index:].low.idxmin() if buy else goog_data[index:].high.idxmax()
     stop_idx = goog_data.index.get_loc(stop_timestmap)
     stop_price = (
-        goog_data.low.iloc[stop_idx] + 0.01
-        if buy
-        else goog_data.high.iloc[stop_idx] - 0.01
+        goog_data.low.iloc[stop_idx] + 0.01 if buy else goog_data.high.iloc[stop_idx] - 0.01
     )
     size = 100 if buy else -100
     entry_price = goog_data.open.iloc[index]
@@ -161,14 +151,10 @@ def test_take_profit_order(index, buy, test_stock_universe: MarketData):
     goog_data = test_stock_universe.get("GOOG", Granularity.D1).df.copy()
     broker = BacktestBroker(test_stock_universe, 100000, 0, 1, False, False, False)
 
-    limit_timestmap = (
-        goog_data[index:].high.idxmax() if buy else goog_data[index:].low.idxmin()
-    )
+    limit_timestmap = goog_data[index:].high.idxmax() if buy else goog_data[index:].low.idxmin()
     limit_idx = goog_data.index.get_loc(limit_timestmap)
     limit_price = (
-        goog_data.high.iloc[limit_idx] - 0.01
-        if buy
-        else goog_data.low.iloc[limit_idx] + 0.01
+        goog_data.high.iloc[limit_idx] - 0.01 if buy else goog_data.low.iloc[limit_idx] + 0.01
     )
     size = 100 if buy else -100
     entry_price = goog_data.open.iloc[index]

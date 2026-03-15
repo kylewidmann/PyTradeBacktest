@@ -11,7 +11,6 @@ from pytradebacktest.data import MarketData
 
 
 class Stats:
-
     def __init__(
         self,
         trades: list[Trade],
@@ -40,9 +39,7 @@ class Stats:
                 "StopLoss": [t.sl for t in trades],
             }
         )
-        self._trades_df["Duration"] = (
-            self._trades_df["ExitTime"] - self._trades_df["EntryTime"]
-        )
+        self._trades_df["Duration"] = self._trades_df["ExitTime"] - self._trades_df["EntryTime"]
 
         self._compute_drawdown_stats()
 
@@ -154,14 +151,10 @@ Worst Trade [%]: {self.worst_trade_return},
 
     @property
     def annualized_return(self):
-        day_returns = (
-            self._equity_df["Equity"].resample("D").last().dropna().pct_change()
-        )
+        day_returns = self._equity_df["Equity"].resample("D").last().dropna().pct_change()
         gmean_day_return = self._geometric_mean(day_returns)
         annual_trading_days = float(
-            365
-            if self._index.dayofweek.to_series().between(5, 6).mean() > 2 / 7 * 0.6
-            else 252
+            365 if self._index.dayofweek.to_series().between(5, 6).mean() > 2 / 7 * 0.6 else 252
         )
         return (1 + gmean_day_return) ** annual_trading_days - 1
 
@@ -171,21 +164,14 @@ Worst Trade [%]: {self.worst_trade_return},
 
     @property
     def annualized_volatility(self):
-        day_returns = (
-            self._equity_df["Equity"].resample("D").last().dropna().pct_change()
-        )
+        day_returns = self._equity_df["Equity"].resample("D").last().dropna().pct_change()
         gmean_day_return = self._geometric_mean(day_returns)
         annual_trading_days = float(
-            365
-            if self._index.dayofweek.to_series().between(5, 6).mean() > 2 / 7 * 0.6
-            else 252
+            365 if self._index.dayofweek.to_series().between(5, 6).mean() > 2 / 7 * 0.6 else 252
         )
         return (
             np.sqrt(
-                (
-                    day_returns.var(ddof=int(bool(day_returns.shape)))
-                    + (1 + gmean_day_return) ** 2
-                )
+                (day_returns.var(ddof=int(bool(day_returns.shape))) + (1 + gmean_day_return) ** 2)
                 ** annual_trading_days
                 - (1 + gmean_day_return) ** (2 * annual_trading_days)
             )
@@ -200,18 +186,13 @@ Worst Trade [%]: {self.worst_trade_return},
 
     @property
     def sortino_ratio(self):
-        day_returns = (
-            self._equity_df["Equity"].resample("D").last().dropna().pct_change()
-        )
+        day_returns = self._equity_df["Equity"].resample("D").last().dropna().pct_change()
         annualized_return = self.annualized_return
         annual_trading_days = float(
-            365
-            if self._index.dayofweek.to_series().between(5, 6).mean() > 2 / 7 * 0.6
-            else 252
+            365 if self._index.dayofweek.to_series().between(5, 6).mean() > 2 / 7 * 0.6 else 252
         )
         return (annualized_return - self._risk_free_rate) / (
-            np.sqrt(np.mean(day_returns.clip(-np.inf, 0) ** 2))
-            * np.sqrt(annual_trading_days)
+            np.sqrt(np.mean(day_returns.clip(-np.inf, 0) ** 2)) * np.sqrt(annual_trading_days)
         )  # noqa: E501
 
     @property
@@ -244,9 +225,7 @@ Worst Trade [%]: {self.worst_trade_return},
 
     @property
     def win_rate(self):
-        return (
-            np.nan if not self.number_of_trades else (self.profit_and_loss > 0).mean()
-        ) * 100
+        return (np.nan if not self.number_of_trades else (self.profit_and_loss > 0).mean()) * 100
 
     @property
     def best_trade_return(self):
@@ -293,22 +272,18 @@ Worst Trade [%]: {self.worst_trade_return},
         _drawdown = 1 - self._equity / np.maximum.accumulate(self._equity)
         self._drawdown = pd.Series(_drawdown, index=self._index)
 
-        iloc = np.unique(
-            np.r_[(self._drawdown == 0).values.nonzero()[0], len(self._drawdown) - 1]
-        )
+        iloc = np.unique(np.r_[(self._drawdown == 0).values.nonzero()[0], len(self._drawdown) - 1])
         iloc = pd.Series(iloc, index=self._drawdown.index[iloc])
         df = iloc.to_frame("iloc").assign(prev=iloc.shift())
         df = df[df["iloc"] > df["prev"] + 1].astype(int)
 
         # If no drawdown since no trade, avoid below for pandas sake and return nan series
         if not len(df):
-            self._drawdown_duration, self._drawdown_peaks = (
-                self._drawdown.replace(0, np.nan),
-            ) * 2
+            self._drawdown_duration, self._drawdown_peaks = (self._drawdown.replace(0, np.nan),) * 2
         else:
-            df["duration"] = df["iloc"].map(self._drawdown.index.__getitem__) - df[
-                "prev"
-            ].map(self.drawdown.index.__getitem__)
+            df["duration"] = df["iloc"].map(self._drawdown.index.__getitem__) - df["prev"].map(
+                self.drawdown.index.__getitem__
+            )
 
             df["peak_dd"] = df.apply(
                 lambda row: self._drawdown.iloc[row["prev"] : row["iloc"] + 1].max(),
@@ -328,7 +303,6 @@ Worst Trade [%]: {self.worst_trade_return},
         return values.diff().dropna().median()
 
     def _round_timedelta(self, value):
-
         if not isinstance(value, pd.Timedelta):
             return value
 

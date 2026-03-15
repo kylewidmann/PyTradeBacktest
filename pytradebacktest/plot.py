@@ -8,10 +8,7 @@ from pytrade.models import Trade
 
 
 def plot(data: IInstrumentData, equity: pd.DataFrame, trades: list[Trade]):
-
-    fig = make_subplots(
-        rows=2, cols=1, row_heights=[0.2, 0.8], subplot_titles=("Equity", "Trades")
-    )
+    fig = make_subplots(rows=2, cols=1, row_heights=[0.2, 0.8], subplot_titles=("Equity", "Trades"))
 
     _plot_equity(fig, equity)
     _plot_ohlc(fig, data)

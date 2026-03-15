@@ -13,13 +13,11 @@ BACKTEST_GRANULARITY = Granularity.M5
 
 
 class BacktestIndicator(Indicator):
-
     def _run(self, *args, **kwargs):
         return self._data.Open > self._data.Close
 
 
 class BacktestStrategy(FxStrategy):
-
     @property
     def subscriptions(self) -> list[CandleSubscription]:
         """
@@ -56,12 +54,16 @@ def crossover(series1: Sequence, series2: Sequence) -> bool:
     series1 = (
         series1.values
         if isinstance(series1, pd.Series)
-        else (series1, series1) if isinstance(series1, Number) else series1
+        else (series1, series1)
+        if isinstance(series1, Number)
+        else series1
     )
     series2 = (
         series2.values
         if isinstance(series2, pd.Series)
-        else (series2, series2) if isinstance(series2, Number) else series2
+        else (series2, series2)
+        if isinstance(series2, Number)
+        else series2
     )
     try:
         return series1[-2] < series2[-2] and series1[-1] > series2[-1]
@@ -70,7 +72,6 @@ def crossover(series1: Sequence, series2: Sequence) -> bool:
 
 
 class Sma(Indicator):
-
     def __init__(self, data: IInstrumentData, period: int):
         self._period = period
         super().__init__(data)
@@ -80,7 +81,6 @@ class Sma(Indicator):
 
 
 class SmaCross(FxStrategy):
-
     fast = 10
     slow = 30
 

@@ -9,7 +9,6 @@ from tests.unit.resources.indicators import SmaCross
 @patch("pytradebacktest.backtest.BacktestBroker.order")
 @pytest.mark.asyncio
 async def test_backtest_trade_count(mock_order, test_stock_universe):
-
     test = Backtest(test_stock_universe, SmaCross, 10000)
     await test.run()
 
@@ -19,7 +18,6 @@ async def test_backtest_trade_count(mock_order, test_stock_universe):
 @patch("tests.unit.resources.indicators.SmaCross")
 @pytest.mark.asyncio
 async def test_strategy_kwargs(mock_strategy, test_stock_universe):
-
     mock_instance = MagicMock()
     mock_strategy.return_value = mock_instance
 

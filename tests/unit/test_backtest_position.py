@@ -20,17 +20,13 @@ def test_position():
     time2 = time1 + timedelta(days=1, hours=2)
     goog_data = MagicMock()
     goog_data.last_price = last_price
-    goog_df = pd.DataFrame(
-        {"Timestamp": [time1, time2], "Close": [entry_price, exit_price]}
-    )
+    goog_df = pd.DataFrame({"Timestamp": [time1, time2], "Close": [entry_price, exit_price]})
     goog_df = goog_df.set_index("Timestamp")
     goog_data.df = goog_df
 
     abc_data = MagicMock()
     abc_data.last_price = last_price
-    abc_df = pd.DataFrame(
-        {"Timestamp": [time1, time2], "Close": [entry_price, exit_price]}
-    )
+    abc_df = pd.DataFrame({"Timestamp": [time1, time2], "Close": [entry_price, exit_price]})
     abc_df = abc_df.set_index("Timestamp")
     abc_data.df = abc_df
 
@@ -51,9 +47,7 @@ def test_position():
     assert position.pl == 2500
     trade1_pl_pct = (last_price / 90 - 1) * 100
     trade2_pl_pct = (last_price / 100 - 1) * 100
-    position_pl_pct = (
-        0.3333333333333333 * trade1_pl_pct + 0.6666666666666666 * trade2_pl_pct
-    )
+    position_pl_pct = 0.3333333333333333 * trade1_pl_pct + 0.6666666666666666 * trade2_pl_pct
     assert position.pl_pct == position_pl_pct
     assert position.is_long is True
     assert position.is_short is False
@@ -70,17 +64,13 @@ def test_position_close():
     time2 = time1 + timedelta(days=1, hours=2)
     goog_data = MagicMock()
     goog_data.last_price = last_price
-    goog_df = pd.DataFrame(
-        {"Timestamp": [time1, time2], "Close": [entry_price, exit_price]}
-    )
+    goog_df = pd.DataFrame({"Timestamp": [time1, time2], "Close": [entry_price, exit_price]})
     goog_df = goog_df.set_index("Timestamp")
     goog_data.df = goog_df
 
     abc_data = MagicMock()
     abc_data.last_price = last_price
-    abc_df = pd.DataFrame(
-        {"Timestamp": [time1, time2], "Close": [entry_price, exit_price]}
-    )
+    abc_df = pd.DataFrame({"Timestamp": [time1, time2], "Close": [entry_price, exit_price]})
     abc_df = abc_df.set_index("Timestamp")
     abc_data.df = abc_df
 

@@ -24,9 +24,7 @@ class Position(IPosition):
 
     @property
     def trades(self):
-        return [
-            trade for trade in self.__trades if trade.instrument == self.__instrument
-        ]
+        return [trade for trade in self.__trades if trade.instrument == self.__instrument]
 
     @property
     def size(self) -> float:
@@ -57,6 +55,4 @@ class Position(IPosition):
         return self.size < 0
 
     def __repr__(self):
-        return (
-            f"<Position[{self.__instrument}]: {self.size} ({len(self.trades)} trades)>"
-        )
+        return f"<Position[{self.__instrument}]: {self.size} ({len(self.trades)} trades)>"

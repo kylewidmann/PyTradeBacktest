@@ -6,7 +6,6 @@ from pytradebacktest.data import MarketData
 
 
 class OpenIndicator(Indicator):
-
     def _run(self, *args, **kwargs):
         return self._data.df.open
 
@@ -17,7 +16,6 @@ def test_indicator_values(data: np.ndarray, indicator: Indicator):
 
 
 def test_indicator_updates(test_fx_universe: MarketData):
-
     def increment_indicator(self):
         if not hasattr(self, "_backtest_values"):
             self._backtest_values = self._values.copy()

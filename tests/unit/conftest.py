@@ -10,13 +10,11 @@ from pytradebacktest.data import CsvDataSource, CsvMarketDataLoader, MarketData
 
 
 class TestIndicator(Indicator):
-
     def _run(self, *args, **kwargs):
         return self._data.df.values.flatten()
 
 
 class TestData(IInstrumentData):
-
     def __init__(self, data: pd.DataFrame):
         self._data = data
         self.__update_event = Event()

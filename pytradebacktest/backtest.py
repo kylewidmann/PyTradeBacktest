@@ -13,23 +13,23 @@ from pytradebacktest.stats import Stats
 
 
 class Backtest:
-
     def __init__(
         self,
         data: MarketData,
         kstrategy: Type[FxStrategy],
         cash: float,
-        comission: float = 0.0,
+        commission: float = 0.0,
         margin: float = 1.0,
+        spread: float = 0.0,
     ):
         self.data = data
         self._strategy = kstrategy
         self.cash = cash
-        self.comission = comission
+        self.commission = commission
         self.margin = margin
+        self.spread = spread
 
     async def run(self, **kwargs):
-
         # Monkey patch indicators so their update does not
         # need to recalculate after each increment, instead
         # store their initial values from the full data context
@@ -41,14 +41,13 @@ class Backtest:
 
         Indicator._update = increment_indicator
 
-        self.broker = BacktestBroker(self.data, self.cash, self.comission, self.margin)
+        self.broker = BacktestBroker(self.data, self.cash, self.commission, self.margin, spread=self.spread)
 
         strategy = self._strategy(self.broker, self.data, **kwargs)
         strategy.init()
 
         with ProgressBar(max_value=len(self.data), redirect_stdout=True) as bar:
             while self.data.next():
-
                 self.broker.next()
                 strategy.next()
 
@@ -68,9 +67,7 @@ class Backtest:
         for instrument in instruments:
             goog_data = self.data.get(instrument, Granularity.M1)
             trades = [
-                trade
-                for trade in self.broker.closed_trades
-                if trade.instrument == instrument
+                trade for trade in self.broker.closed_trades if trade.instrument == instrument
             ]
             equity_df = pd.DataFrame(
                 self.broker._equity, index=self.data._market_index, columns=["Equity"]
